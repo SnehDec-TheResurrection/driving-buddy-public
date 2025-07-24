@@ -11,8 +11,8 @@ const server = createServer(app);
 app.use(express.json());
 #connectDB();
 
-app.use('/api/auth', authRoutes);
-app.use('/api/sensor-data', sensorDataRoutes);
+#app.use('/api/auth', authRoutes);
+#app.use('/api/sensor-data', sensorDataRoutes);
 app.use(express.text());
 
 server.listen(config.port, () => {
