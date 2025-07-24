@@ -29,13 +29,16 @@ server.on('error', (err) => {
   }
 });
 
+let currentFilePath = null; 
+let send_string = "" 
+
 app.get("/", function(req, res) {
   res.send("You made it!");
   });
 
-
-let currentFilePath = null; 
-let send_string = "" 
+app.get("/esp32", function(req, res) {
+  res.send(send_string);
+  });
 
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
