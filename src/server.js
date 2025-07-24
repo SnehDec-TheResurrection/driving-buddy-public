@@ -64,7 +64,7 @@ app.post("/esp32", async (req, res) => {
       inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
     };
 
-    await SensorData.create(doc);
+    await SensorData.insertOne(doc);
     res.send("Received row!");
     console.log(doc);
   } catch (err) {
