@@ -15,7 +15,7 @@ app.use(express.json());
 #app.use('/api/sensor-data', sensorDataRoutes);
 app.use(express.text());
 
-server.listen(config.port, () => {
+server.listen(process.env.port, () => {
   console.log(`Server running on port ${config.port}`);
 });
 
