@@ -54,6 +54,7 @@ app.get("/esp32", async (req, res) => {
 let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
 let end_trip = "";
+let trip_ended = false;
 
 app.post("/esp32", async (req, res) => {
   try {
@@ -67,6 +68,7 @@ app.post("/esp32", async (req, res) => {
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
       return res.send("Thank you for driving!");
+      trip_ended = true;
     }
     
 
@@ -96,7 +98,8 @@ app.post("/esp32", async (req, res) => {
       hard_braking: acceleration <= -3.0,
       inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
       lane_offset: fields[5],
-      lane_offset_direction: fields[6]
+      lane_offset_direction: fields[6],
+      trip_ended: trip_ended
     };
 
     await SensorData.create(doc);
