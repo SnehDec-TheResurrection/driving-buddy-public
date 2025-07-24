@@ -47,6 +47,11 @@ app.post("/esp32", async (req, res) => {
       return res.sendStatus(200);
     }
 
+    else if (csv_data === "end_of_trip"){
+      res.send("Thank you for driving!");
+    }
+    
+
     const fields = csv_data.split(",");
     if (fields.length < 5) throw new Error("Invalid CSV");
 
