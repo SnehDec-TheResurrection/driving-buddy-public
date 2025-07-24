@@ -35,8 +35,12 @@ app.get("/", function(req, res) {
   res.send("You made it!");
   });
 
+app.get("/esp32", function(req, res){
+  res.send(doc);
+});
 
 let current_tripID = null; // Global variable to keep track of active tripID
+let doc = null;
 
 app.post("/esp32", async (req, res) => {
   try {
@@ -68,7 +72,7 @@ app.post("/esp32", async (req, res) => {
         seconds);
 
 
-    const doc = {
+    doc = {
       tripID: current_tripID,
       timestamp: time_with_date,
       speed: parseFloat(fields[1]),
