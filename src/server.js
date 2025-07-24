@@ -38,38 +38,40 @@ app.get("/", function(req, res) {
 
 let current_tripID = null; // Global variable to keep track of active tripID
 
-app.post("/esp32", async function(req, res) {
-  const csv_data = req.body;
-  const fields = csv_data.split(",");
-  
-  if(csv_data == "start_of_trip"){
+app.post("/esp32", async (req, res) => {
+  try {
+    const csv_data = req.body;
+    if (csv_data === "start_of_trip") {
       const now = new Date();
-      // Get current timestamp
       current_tripID = formatTimestamp(now);
+      return res.sendStatus(200);
+    }
+
+    const fields = csv_data.split(",");
+    if (fields.length < 5) throw new Error("Invalid CSV");
+
+    const acceleration = parseFloat(fields[2]);
+    const rpm = parseFloat(fields[3]);
+
+    const doc = {
+      tripID: current_tripID,
+      timestamp: fields[0],
+      speed: parseFloat(fields[1]),
+      acceleration,
+      rpm,
+      engine_load: parseFloat(fields[4]),
+      hard_braking: acceleration <= -3.0,
+      inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
+    };
+
+    await SensorData.create(doc);
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("ESP32 route error:", err);
+    res.sendStatus(500);
   }
-  
-  else{
-     const acceleration = parseFloat(fields[2]);
-     const rpm = parseFloat(fields[3]);
-     const hard_braking = acceleration <=-3.0;
-     const inconsistent_speed = acceleration >= 3.0 && rpm >= 3500;
-    
-   const doc = {
-          tripID: current_tripID,
-          timestamp: fields[0],
-          speed:  parseFloat(fields[1]),
-          acceleration,
-          rpm,
-          engine_load: parseFloat(fields[4]),
-          // flags (independent)
-          hard_braking,
-          inconsistent_speed
-                                       };
-          await SensorData.create(doc);
-                  
-  }
-  res.sendStatus(200);           // Sends HTTP 200
 });
+
 
 // Helper function to format date as DDMMYY[Hour][Min][Sec]
 function formatTimestamp(date) {
