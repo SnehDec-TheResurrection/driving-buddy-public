@@ -9,7 +9,7 @@ const connectDB = async () => {
     });
     console.log('MongoDB connected');
   } catch (err) {
-    console.error('DB connection failed:', err.message);
+    console.error('mongo url:', config.MONGO_URL);
     process.exit(1);
   }
 };
