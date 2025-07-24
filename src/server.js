@@ -7,7 +7,7 @@ import connectDB from './config/db.js';
 import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
 //import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
-import sensorData from './core/models/sensorDataModel.js';
+import SensorData from './core/models/sensorDataModel.js';
 
 const app = express();
 const server = createServer(app);
