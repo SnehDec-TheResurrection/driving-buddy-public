@@ -34,7 +34,8 @@ app.get("/", function(req, res) {
   });
 
 
-let currentFilePath = null; // Global variable to keep track of active trip file
+let currentFilePath = null; 
+let send_string = "" 
 
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
@@ -42,20 +43,16 @@ app.post("/esp32", function(req, res) {
   if(csv_data == "start_of_trip"){
       const now = new Date();
       // Get current timestamp
-      const filename = formatTimestamp(now) + '.csv';
-      currentFilePath = path.join(__dirname, filename);
+      currentFilePath = formatTimestamp(now) + '.csv';
+      //currentFilePath = path.join(__dirname, filename);
+      send_string = currentFilePath + "\n"; 
   }
   
   else{
-  fs.appendFile(currentFilePath, csv_data + '\n', err => {
-    if (err) {
-      console.log(err);
-      res.send("Could not write to file");
-    } else {
-      res.send("Successfully wrote to file");
-    }
-  });
+    send_string = currentFilePath + csv_data + "\n";
   }
+
+  res.send(send_string);
 });
 
 // Helper function to format date as DDMMYY[Hour][Min][Sec]
