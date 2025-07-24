@@ -48,14 +48,14 @@ app.post("/esp32", function(req, res) {
   }
   
   else{
-   const docs = results.map(row => {
-          const tripID = current_tripID;
-          const speed = parseFloat(fields[0]);
-          const acceleration = parseFloat(fields[1]);
-          const rpm = parseFloat(fields[2]);
-          const engine_load = parseFloat(fields[3]);
-                                       }
-          await SensorData.insertMany(docs);
+   const doc = {
+          tripID = current_tripID,
+          speed = parseFloat(fields[0]),
+          acceleration = parseFloat(fields[1]),
+          rpm = parseFloat(fields[2]),
+          engine_load = parseFloat(fields[3])
+                                       };
+          await SensorData.insert(doc);
                   
   }
 });
