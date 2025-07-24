@@ -55,13 +55,15 @@ app.post("/esp32", async (req, res) => {
 
     const doc = {
       tripID: current_tripID,
-      timestamp: fields[0],
+      timestamp: Date.parse(fields[0]),
       speed: parseFloat(fields[1]),
       acceleration,
       rpm,
       engine_load: parseFloat(fields[4]),
       hard_braking: acceleration <= -3.0,
       inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
+      lane_offset: fields[5],
+      lane_offset_direction: fields[6]
     };
 
     await SensorData.create(doc);
