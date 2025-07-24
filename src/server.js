@@ -52,10 +52,11 @@ app.post("/esp32", async (req, res) => {
 
     const acceleration = parseFloat(fields[2]);
     const rpm = parseFloat(fields[3]);
+    const time_without_date = new Date(fields[0]);
 
     const doc = {
       tripID: current_tripID,
-      timestamp: Date.parse(fields[0]),
+      timestamp: time_without_date,
       speed: parseFloat(fields[1]),
       acceleration,
       rpm,
