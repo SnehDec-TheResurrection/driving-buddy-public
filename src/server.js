@@ -1,6 +1,7 @@
 import express from 'express';
 import { createServer } from 'http';
 import fs from 'fs';
+import path from 'path';
 //import connectDB from './config/db.js';
 //import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
@@ -32,10 +33,20 @@ app.get("/", function(req, res) {
   res.send("You made it!");
   });
 
+let currentFilePath = null; // Global variable to keep track of active trip file
+
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
+  // Get current timestamp
 
-  fs.appendFile(__dirname + '/esp32_comms.txt', csv_data + '\n', err => {
+  if(csv_data == "start_of_trip"){
+      const now = new Date();
+      const filename = formatTimestamp(now) + '.csv';
+      currentFilePath = path.join(__dirname, filename);
+  }
+  
+  else{
+  fs.appendFile(filePath, csv_data + '\n', err => {
     if (err) {
       console.log(err);
       res.send("Could not write to file");
@@ -43,4 +54,17 @@ app.post("/esp32", function(req, res) {
       res.send("Successfully wrote to file");
     }
   });
+  }
 });
+
+// Helper function to format date as DDMMYY[Hour][Min][Sec]
+function formatTimestamp(date) {
+  const pad = (n) => n.toString().padStart(2, '0');
+  const dd = pad(date.getDate());
+  const mm = pad(date.getMonth() + 1); // Months are 0-indexed
+  const yy = date.getFullYear().toString().slice(-2);
+  const hh = pad(date.getHours());
+  const mi = pad(date.getMinutes());
+  const ss = pad(date.getSeconds());
+  return `${dd}${mm}${yy}${hh}${mi}${ss}`;
+}
