@@ -33,15 +33,29 @@ app.get("/", function(req, res) {
   res.send("You made it!");
   });
 
+app.get("/:filename", (req, res) => {
+  const filePath = path.join(__dirname, req.params.filename);
+  res.sendFile(filePath, err => {
+    if (err) {
+      console.error(err);
+      res.status(404).send("File not found.");
+    }
+  });
+});
+
+
 let currentFilePath = null; // Global variable to keep track of active trip file
+let counter = 0;
 
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
   // Get current timestamp
 
   if(csv_data == "start_of_trip"){
+      counter += 1;
       const now = new Date();
-      const filename = formatTimestamp(now) + '.csv';
+     // const filename = formatTimestamp(now) + '.csv';
+      const filename = counter + ".txt"
       currentFilePath = path.join(__dirname, filename);
   }
   
