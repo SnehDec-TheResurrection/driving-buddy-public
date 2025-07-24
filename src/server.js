@@ -34,7 +34,7 @@ app.get("/", function(req, res) {
   });
 
 app.get("/:filename", (req, res) => {
-  const filePath = path.join(__dirname, req.params.filename);
+  const filePath = __dirname + req.params.filename + ".txt";
   res.sendFile(filePath, err => {
     if (err) {
       console.error(err);
