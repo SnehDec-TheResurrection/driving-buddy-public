@@ -6,6 +6,7 @@ import path from 'path';
 //import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
 //import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
+import sensorData from './core/models/sensorDataModel.js';
 
 const app = express();
 const server = createServer(app);
@@ -38,12 +39,21 @@ let currentFilePath = null; // Global variable to keep track of active trip file
 
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
+  const fields = csv_data.split(",");
   
   if(csv_data == "start_of_trip"){
       const now = new Date();
       // Get current timestamp
-      const filename = formatTimestamp(now) + '.csv';
-      currentFilePath = path.join(__dirname, filename);
+      const current_tripID = formatTimestamp(now);
+      const docs = results.map(row => {
+          const tripID = current_tripID;
+          const speed = parseFloat(fields[0]);
+          const acceleration = parseFloat(fields[1]);
+          const rpm = parseFloat(fields[2]);
+          const engine_load = parseFloat(fields[3]);
+                                       }
+          await SensorData.insertMany(docs);
+                  
   }
   
   else{
