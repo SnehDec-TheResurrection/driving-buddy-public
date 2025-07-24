@@ -65,7 +65,7 @@ app.post("/esp32", async function(req, res) {
           hard_braking,
           inconsistent_speed
                                        };
-          await SensorData.insertOne(doc);
+          await SensorData.create(doc);
                   
   }
   res.sendStatus(200);           // Sends HTTP 200
