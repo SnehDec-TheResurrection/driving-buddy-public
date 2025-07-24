@@ -35,11 +35,15 @@ app.get("/", function(req, res) {
   res.send("You made it!");
   });
 
-app.get("/esp32", function(req, res) {
-  if (!doc) {
-    return res.status(404).send("No data received yet.");
+app.get("/esp32", async (req, res) => {
+  try {
+    const latestEntry = await SensorData.findOne().sort({ timestamp: -1 }); // sort by most recent timestamp
+    if (!latestEntry) return res.status(404).send("No data in database yet.");
+    res.json(latestEntry);
+  } catch (err) {
+    console.error("Error fetching latest sensor data:", err);
+    res.sendStatus(500);
   }
-  res.json(doc); // <- use res.json instead of json.stringify
 });
 
 
