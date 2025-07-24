@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const sensorDataSchema = new mongoose.Schema({
   tripID: {type: String, required: true},
-  timestamp:{type:String, required:true},
+  timestamp:{type:Date, required:true},
   speed: { type: Number, required: true },
   acceleration: { type: Number, required: true },
   rpm: { type: Number, required: true },
@@ -11,7 +11,9 @@ const sensorDataSchema = new mongoose.Schema({
   sharp_turn: { type: Boolean },
   // lane_deviation: { type: Boolean }, // Uncomment when ready to use
   inconsistent_speed: { type: Boolean },
-  hard_braking: { type: Boolean }
+  hard_braking: { type: Boolean }, 
+  lane_offset: {type:Number},
+  lane_offset_direction: {type:String}
 });
 
 const SensorData = mongoose.model('SensorData', sensorDataSchema);
