@@ -44,11 +44,15 @@ app.get("/esp32", async (req, res) => {
     console.error("Error fetching latest sensor data:", err);
     res.sendStatus(500);
   }
+  if(end_trip){
+    res.send(end_trip);
+  }
 });
 
 
 let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
+let end_trip = "";
 
 app.post("/esp32", async (req, res) => {
   try {
@@ -60,7 +64,7 @@ app.post("/esp32", async (req, res) => {
     }
 
     else if (csv_data === "end_of_trip"){
-      res.send("Thank you for driving!");
+      end_trip ="Thank you for driving!";
     }
     
 
