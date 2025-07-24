@@ -35,9 +35,13 @@ app.get("/", function(req, res) {
   res.send("You made it!");
   });
 
-app.get("/esp32", function(req, res){
-  res.send(json.stringify(doc));
+app.get("/esp32", function(req, res) {
+  if (!doc) {
+    return res.status(404).send("No data received yet.");
+  }
+  res.json(doc); // <- use res.json instead of json.stringify
 });
+
 
 let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
