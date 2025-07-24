@@ -38,7 +38,7 @@ app.get("/", function(req, res) {
 
 let current_tripID = null; // Global variable to keep track of active tripID
 
-app.post("/esp32", function(req, res) {
+app.post("/esp32", async(req, res) {
   const csv_data = req.body;
   const fields = csv_data.split(",");
   
@@ -49,12 +49,15 @@ app.post("/esp32", function(req, res) {
   }
   
   else{
+     const acceleration = parseFloat(fields[2]);
+     const rpm = parseFloat(fields[3]);
+    
    const doc = {
           tripID: current_tripID,
           timestamp: fields[0],
           speed:  parseFloat(fields[1]),
-          acceleration: parseFloat(fields[2]),
-          rpm: parseFloat(fields[3]),
+          acceleration,
+          rpm,
           engine_load: parseFloat(fields[4]),
           // flags (independent)
           hard_braking: acceleration <= -3.0,
