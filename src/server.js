@@ -1,18 +1,18 @@
 import express from 'express';
 import { createServer } from 'http';
-#import connectDB from './config/db.js';
-#import config from './config/index.js';
-#import authRoutes from './core/routes/authRoutes.js';
-#import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
+//import connectDB from './config/db.js';
+//import config from './config/index.js';
+//import authRoutes from './core/routes/authRoutes.js';
+//import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
 
 const app = express();
 const server = createServer(app);
 
 app.use(express.json());
-#connectDB();
+//connectDB();
 
-#app.use('/api/auth', authRoutes);
-#app.use('/api/sensor-data', sensorDataRoutes);
+//app.use('/api/auth', authRoutes);
+//app.use('/api/sensor-data', sensorDataRoutes);
 app.use(express.text());
 
 server.listen((process.env.PORT || 3000), () => {
