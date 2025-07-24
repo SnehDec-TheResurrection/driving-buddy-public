@@ -65,11 +65,12 @@ app.post("/esp32", async (req, res) => {
 
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
+      res.send("Thank you for driving!");
     }
     
 
     const fields = csv_data.split(",");
-    //if (fields.length < 5) throw new Error("Invalid CSV");
+    //if (fields.length < 7) throw new Error("Invalid CSV");
 
     const acceleration = parseFloat(fields[2]);
     const rpm = parseFloat(fields[3]);
