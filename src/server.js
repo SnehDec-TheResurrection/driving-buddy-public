@@ -77,6 +77,9 @@ app.post("/esp32", async (req, res) => {
 
     const acceleration = parseFloat(fields[2]);
     const rpm = parseFloat(fields[3]);
+    const lane_offset = parseFloat(fields[5]);
+    const lane_offset_direction = parseFloat(fields[6]);
+    
     const [hours, minutes, seconds] = fields[0].split(":").map(Number);
     const now = new Date();
     const time_with_date = new Date(
@@ -97,9 +100,9 @@ app.post("/esp32", async (req, res) => {
       engine_load: parseFloat(fields[4]),
       hard_braking: acceleration <= -3.0,
       inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
-      lane_offset: fields[5],
-      lane_offset_direction: fields[6],
-      trip_ended: trip_ended
+      lane_offset,
+      lane_offset_direction,
+      trip_ended
     };
 
     await SensorData.create(doc);
