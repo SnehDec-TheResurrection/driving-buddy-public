@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import fs from 'fs';
 import path from 'path';
+import mongoose from 'mongoose';
 //import connectDB from './config/db.js';
 //import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
@@ -55,7 +56,7 @@ app.post("/esp32", function(req, res) {
           rpm = parseFloat(fields[2]),
           engine_load = parseFloat(fields[3])
                                        };
-          await SensorData.insert(doc);
+          await SensorData.insertOne(doc);
                   
   }
 });
