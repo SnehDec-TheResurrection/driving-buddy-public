@@ -60,6 +60,8 @@ app.post("/esp32", async (req, res) => {
   try {
     const csv_data = req.body;
     if (csv_data === "start_of_trip") {
+      end_trip = "";
+      trip_ended = false;
       const now = new Date();
       current_tripID = formatTimestamp(now);
       return res.sendStatus(200);
@@ -67,8 +69,8 @@ app.post("/esp32", async (req, res) => {
 
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
-      return res.send("Thank you for driving!");
       trip_ended = true;
+      return res.send("Thank you for driving!");
     }
     
 
@@ -77,8 +79,13 @@ app.post("/esp32", async (req, res) => {
 
     const acceleration = parseFloat(fields[2]);
     const rpm = parseFloat(fields[3]);
-    const lane_offset = parseFloat(fields[5]);
-    const lane_offset_direction = parseFloat(fields[6]);
+    let lane_offset = parseFloat(fields[5]);
+    let lane_offset_direction = fields[6];
+    
+    if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
+      lane_offset = 0; 
+      lane_offset_direction = "centre";
+    }
     
     const [hours, minutes, seconds] = fields[0].split(":").map(Number);
     const now = new Date();
