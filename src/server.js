@@ -48,14 +48,20 @@ app.post("/esp32", function(req, res) {
       // Get current timestamp
       currentFilePath = formatTimestamp(now) + '.csv';
       //currentFilePath = path.join(__dirname, filename);
-      send_string = currentFilePath; 
+      send_string = "<html><body>" + currentFilePath; 
+  }
+
+  else if (csv_data == "end_of_trip"){
+    send_string += "</body></html>"
+    
   }
   
   else{
     send_string += csv_data;
+    send_string += "<br>"
   }
 
-  res.send(send_string + "\n");
+  res.send(send_string);
 });
 
 // Helper function to format date as DDMMYY[Hour][Min][Sec]
