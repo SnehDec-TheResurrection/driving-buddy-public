@@ -65,7 +65,7 @@ app.post("/esp32", async (req, res) => {
     };
 
     await SensorData.create(doc);
-    res.sendStatus(200);
+    res.send("Received row!");
   } catch (err) {
     console.error("ESP32 route error:", err);
     res.sendStatus(500);
