@@ -3,7 +3,7 @@ import config from './index.js';
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URL {
+    await mongoose.connect(config.MONGO_URL {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
