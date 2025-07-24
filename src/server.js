@@ -48,17 +48,12 @@ app.post("/esp32", function(req, res) {
       // Get current timestamp
       currentFilePath = formatTimestamp(now) + '.csv';
       //currentFilePath = path.join(__dirname, filename);
-      send_string = "<html><body>" + currentFilePath; 
-  }
-
-  else if (csv_data == "end_of_trip"){
-    send_string += "</body></html>"
-    
+      send_string = currentFilePath + "<br/>";
   }
   
   else{
     send_string += csv_data;
-    send_string += "<br>"
+    send_string += "<br>";
   }
 
   res.send(send_string);
