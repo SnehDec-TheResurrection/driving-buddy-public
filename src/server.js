@@ -60,7 +60,7 @@ app.post("/esp32", function(req, res) {
   }
   
   else{
-  fs.appendFile(filePath, csv_data + '\n', err => {
+  fs.appendFile(currentFilePath, csv_data + '\n', err => {
     if (err) {
       console.log(err);
       res.send("Could not write to file");
