@@ -27,6 +27,10 @@ server.on('error', (err) => {
   }
 });
 
+app.get("/", function(req, res) {
+  res.send("You made it!");
+  });
+
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
 
