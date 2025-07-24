@@ -13,7 +13,8 @@ const sensorDataSchema = new mongoose.Schema({
   inconsistent_speed: { type: Boolean },
   hard_braking: { type: Boolean }, 
   lane_offset: {type:Number},
-  lane_offset_direction: {type:String}
+  lane_offset_direction: {type:String},
+  trip_ended:{type:Boolean}
 });
 
 const SensorData = mongoose.model('SensorData', sensorDataSchema);
