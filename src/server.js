@@ -50,12 +50,15 @@ app.post("/esp32", function(req, res) {
   
   else{
    const doc = {
-          tripID = current_tripID,
-          timestamp = fields[0],
-          speed = parseFloat(fields[1]),
-          acceleration = parseFloat(fields[2]),
-          rpm = parseFloat(fields[3]),
-          engine_load = parseFloat(fields[4])
+          tripID: current_tripID,
+          timestamp: fields[0],
+          speed:  parseFloat(fields[1]),
+          acceleration: parseFloat(fields[2]),
+          rpm: parseFloat(fields[3]),
+          engine_load: parseFloat(fields[4]),
+          // flags (independent)
+          hard_braking: acceleration <= -3.0,
+          inconsistent_speed: acceleration >= 3.0 && rpm >= 3500
                                        };
           await SensorData.insertOne(doc);
                   
