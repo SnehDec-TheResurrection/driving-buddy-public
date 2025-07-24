@@ -38,7 +38,7 @@ app.get("/", function(req, res) {
 
 let current_tripID = null; // Global variable to keep track of active tripID
 
-app.post("/esp32", async(req, res) {
+app.post("/esp32", async function(req, res) {
   const csv_data = req.body;
   const fields = csv_data.split(",");
   
@@ -51,6 +51,8 @@ app.post("/esp32", async(req, res) {
   else{
      const acceleration = parseFloat(fields[2]);
      const rpm = parseFloat(fields[3]);
+     const hard_braking = acceleration <=-3.0;
+     const inconsistent_speed = acceleration >= 3.0 && rpm >= 3500;
     
    const doc = {
           tripID: current_tripID,
@@ -60,12 +62,13 @@ app.post("/esp32", async(req, res) {
           rpm,
           engine_load: parseFloat(fields[4]),
           // flags (independent)
-          hard_braking: acceleration <= -3.0,
-          inconsistent_speed: acceleration >= 3.0 && rpm >= 3500
+          hard_braking,
+          inconsistent_speed
                                        };
           await SensorData.insertOne(doc);
                   
   }
+  res.sendStatus(200);           // Sends HTTP 200
 });
 
 // Helper function to format date as DDMMYY[Hour][Min][Sec]
