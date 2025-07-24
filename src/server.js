@@ -1,5 +1,6 @@
 import express from 'express';
 import { createServer } from 'http';
+import fs from 'fs';
 //import connectDB from './config/db.js';
 //import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
@@ -8,7 +9,7 @@ import { createServer } from 'http';
 const app = express();
 const server = createServer(app);
 
-app.use(express.json());
+//app.use(express.json());
 //connectDB();
 
 //app.use('/api/auth', authRoutes);
