@@ -3,8 +3,8 @@ import { createServer } from 'http';
 import fs from 'fs';
 import path from 'path';
 import mongoose from 'mongoose';
-//import connectDB from './config/db.js';
-//import config from './config/index.js';
+import connectDB from './config/db.js';
+import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
 //import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
 import sensorData from './core/models/sensorDataModel.js';
@@ -13,19 +13,19 @@ const app = express();
 const server = createServer(app);
 
 //app.use(express.json());
-//connectDB();
+connectDB();
 
 //app.use('/api/auth', authRoutes);
 //app.use('/api/sensor-data', sensorDataRoutes);
 app.use(express.text());
 
-server.listen((process.env.PORT || 3000), () => {
-  console.log(`Server running on port ${process.env.PORT}`);
+server.listen((config.PORT || 3000), () => {
+  console.log(`Server running on port ${config.PORT}`);
 });
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${process.env.PORT} is already in use. Terminate its running process or use a different port.`);
+    console.error(`Port ${config.PORT} is already in use. Terminate its running process or use a different port.`);
   } else {
     console.error('Server startup error:', err);
   }
