@@ -69,7 +69,7 @@ app.post("/esp32", async (req, res) => {
     
 
     const fields = csv_data.split(",");
-    if (fields.length < 5) throw new Error("Invalid CSV");
+    //if (fields.length < 5) throw new Error("Invalid CSV");
 
     const acceleration = parseFloat(fields[2]);
     const rpm = parseFloat(fields[3]);
