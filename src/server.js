@@ -36,6 +36,9 @@ app.get("/", function(req, res) {
   });
 
 app.get("/esp32", async (req, res) => {
+    if(end_trip){
+    return res.send(end_trip);
+  }
   try {
     const latestEntry = await SensorData.findOne().sort({ timestamp: -1 }); // sort by most recent timestamp
     if (!latestEntry) return res.status(404).send("No data in database yet.");
@@ -44,9 +47,7 @@ app.get("/esp32", async (req, res) => {
     console.error("Error fetching latest sensor data:", err);
     res.sendStatus(500);
   }
-  if(end_trip){
-    res.send(end_trip);
-  }
+
 });
 
 
@@ -65,7 +66,7 @@ app.post("/esp32", async (req, res) => {
 
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
-      res.send("Thank you for driving!");
+      return res.send("Thank you for driving!");
     }
     
 
