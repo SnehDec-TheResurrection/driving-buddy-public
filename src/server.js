@@ -12,7 +12,7 @@ import SensorData from './core/models/sensorDataModel.js';
 const app = express();
 const server = createServer(app);
 
-//app.use(express.json());
+app.use(express.json());
 await connectDB();
 
 //app.use('/api/auth', authRoutes);
@@ -36,7 +36,7 @@ app.get("/", function(req, res) {
   });
 
 app.get("/esp32", function(req, res){
-  res.send(doc);
+  res.send(json.stringify(doc));
 });
 
 let current_tripID = null; // Global variable to keep track of active tripID
