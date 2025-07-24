@@ -19,13 +19,13 @@ const server = createServer(app);
 //app.use('/api/sensor-data', sensorDataRoutes);
 app.use(express.text());
 
-server.listen((config.PORT || 3000), () => {
-  console.log(`Server running on port ${config.PORT}`);
+server.listen((config.port || 3000), () => {
+  console.log(`Server running on port ${config.port}`);
 });
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${config.PORT} is already in use. Terminate its running process or use a different port.`);
+    console.error(`Port ${config.port} is already in use. Terminate its running process or use a different port.`);
   } else {
     console.error('Server startup error:', err);
   }
