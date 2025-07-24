@@ -35,7 +35,7 @@ app.get("/", function(req, res) {
   });
 
 
-let currentFilePath = null; // Global variable to keep track of active trip file
+let current_tripID = null; // Global variable to keep track of active tripID
 
 app.post("/esp32", function(req, res) {
   const csv_data = req.body;
@@ -44,8 +44,11 @@ app.post("/esp32", function(req, res) {
   if(csv_data == "start_of_trip"){
       const now = new Date();
       // Get current timestamp
-      const current_tripID = formatTimestamp(now);
-      const docs = results.map(row => {
+      current_tripID = formatTimestamp(now);
+  }
+  
+  else{
+   const docs = results.map(row => {
           const tripID = current_tripID;
           const speed = parseFloat(fields[0]);
           const acceleration = parseFloat(fields[1]);
@@ -54,17 +57,6 @@ app.post("/esp32", function(req, res) {
                                        }
           await SensorData.insertMany(docs);
                   
-  }
-  
-  else{
-  fs.appendFile(currentFilePath, csv_data + '\n', err => {
-    if (err) {
-      console.log(err);
-      res.send("Could not write to file");
-    } else {
-      res.send("Successfully wrote to file");
-    }
-  });
   }
 });
 
