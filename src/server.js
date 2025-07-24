@@ -51,10 +51,11 @@ app.post("/esp32", function(req, res) {
   else{
    const doc = {
           tripID = current_tripID,
-          speed = parseFloat(fields[0]),
-          acceleration = parseFloat(fields[1]),
-          rpm = parseFloat(fields[2]),
-          engine_load = parseFloat(fields[3])
+          timestamp = fields[0],
+          speed = parseFloat(fields[1]),
+          acceleration = parseFloat(fields[2]),
+          rpm = parseFloat(fields[3]),
+          engine_load = parseFloat(fields[4])
                                        };
           await SensorData.insertOne(doc);
                   
