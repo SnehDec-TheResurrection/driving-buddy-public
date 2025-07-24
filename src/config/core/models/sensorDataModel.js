@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const sensorDataSchema = new mongoose.Schema({
+  tripID: {type:String, required:true},
   speed: { type: Number, required: true },
   acceleration: { type: Number, required: true },
   rpm: { type: Number, required: true },
