@@ -36,17 +36,23 @@ app.get("/", function(req, res) {
   });
 
 app.get("/esp32", async (req, res) => {
+  if (!doc) {
+    return res.status(404).send("No data received yet.");
+  }
+  res.json(doc); // <- use res.json instead of json.stringify
+
+
    // if(trip_ended){
     //return res.send(end_trip);
   //}
-  try {
-    const latestEntry = await SensorData.findOne().sort({ timestamp: -1 }); // sort by most recent timestamp
-    if (!latestEntry) return res.status(404).send("No data in database yet.");
-    res.json(latestEntry);
-  } catch (err) {
-    console.error("Error fetching latest sensor data:", err);
-    res.sendStatus(500);
-  }
+ // try {
+ //   const latestEntry = await SensorData.findOne().sort({ timestamp: -1 }); // sort by most recent timestamp
+ //   if (!latestEntry) return res.status(404).send("No data in database yet.");
+ //   res.json(latestEntry);
+ // } catch (err) {
+ //   console.error("Error fetching latest sensor data:", err);
+  //  res.sendStatus(500);
+ // }
 
 });
 
