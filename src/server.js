@@ -36,9 +36,9 @@ app.get("/", function(req, res) {
   });
 
 app.get("/esp32", async (req, res) => {
-    if(end_trip){
-    return res.send(end_trip);
-  }
+   // if(trip_ended){
+    //return res.send(end_trip);
+  //}
   try {
     const latestEntry = await SensorData.findOne().sort({ timestamp: -1 }); // sort by most recent timestamp
     if (!latestEntry) return res.status(404).send("No data in database yet.");
