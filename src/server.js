@@ -70,7 +70,7 @@ app.post("/esp32", async (req, res) => {
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
       trip_ended = true;
-      csv_data = "00:12:00, 1, 2, 3, 4, 5, right";
+      csv_data = "00:12:00,1,2,3,4,5,right";
     }
     
 
