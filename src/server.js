@@ -8,7 +8,6 @@ import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
 //import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
 import SensorData from './core/models/sensorDataModel.js';
-import {spawn} from 'child_process'
 
 const app = express();
 const server = createServer(app);
