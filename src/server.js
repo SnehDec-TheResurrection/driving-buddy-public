@@ -128,25 +128,6 @@ app.post("/esp32", async (req, res) => {
   }
 });
 
-app.post('/python', function(req,res){
-const send_string = req.body;
-//spawn python
-const py = spawn('py', ['C:\\Users\\hp\\IdeaProjects\\backend_and_classifier\\backend_and_classifier.py']);
-
-  py.stdin.write(send_string);
-  py.stdin.end();
-
-  py.stdout.on('data', data => {
-    console.log(`Python says: ${data}`);
-  });
-
-  py.stderr.on('data', data => {
-    console.error(`Python error: ${data}`);
-  });
-  py.on('close', code => {
-      res.send(`Python finished with code ${code}`);
-    });
-  });
 
 
 // Helper function to format date as DDMMYY[Hour][Min][Sec]
