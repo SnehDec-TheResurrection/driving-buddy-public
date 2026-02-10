@@ -8,6 +8,7 @@ import config from './config/index.js';
 //import authRoutes from './core/routes/authRoutes.js';
 //import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
 import SensorData from './core/models/sensorDataModel.js';
+import {spawn} from 'child_process'
 
 const app = express();
 const server = createServer(app);
@@ -126,6 +127,26 @@ app.post("/esp32", async (req, res) => {
     res.sendStatus(500);
   }
 });
+
+app.post('/python', function(req,res){
+const send_string = req.body;
+//spawn python
+const py = spawn('py', ['C:\\Users\\hp\\IdeaProjects\\backend_and_classifier\\backend_and_classifier.py']);
+
+  py.stdin.write(send_string);
+  py.stdin.end();
+
+  py.stdout.on('data', data => {
+    console.log(`Python says: ${data}`);
+  });
+
+  py.stderr.on('data', data => {
+    console.error(`Python error: ${data}`);
+  });
+  py.on('close', code => {
+      res.send(`Python finished with code ${code}`);
+    });
+  });
 
 
 // Helper function to format date as DDMMYY[Hour][Min][Sec]
