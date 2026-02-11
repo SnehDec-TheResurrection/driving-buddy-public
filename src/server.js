@@ -66,7 +66,7 @@ let trip_ended = false;
 app.post('/python', function(req,res){
 const send_string = req.body;
 //spawn python
-const py = spawn('py', ['C:\\Users\\hp\\IdeaProjects\\backend_and_classifier\\backend_and_classifier.py']);
+const py = spawn('py', ['python_backend.py']);
 
   py.stdin.write(send_string);
   py.stdin.end();
