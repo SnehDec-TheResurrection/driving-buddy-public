@@ -63,6 +63,7 @@ let end_trip = "";
 let trip_ended = false;
 
 app.post('/python', function(req,res){
+let output = ""
 const send_string = req.body;
 //spawn python
 const py = spawn('python3', ['src/python_backend.py']);
@@ -72,13 +73,14 @@ const py = spawn('python3', ['src/python_backend.py']);
 
   py.stdout.on('data', data => {
     console.log(`Python says: ${data}`);
+    output += data;
   });
 
   py.stderr.on('data', data => {
     console.error(`Python error: ${data}`);
   });
   py.on('close', code => {
-      res.send(`Python finished with code ${code}`);
+      res.send(`Python finished with code ${code}. Here is your row: ${output}`);
     });
   });
 
