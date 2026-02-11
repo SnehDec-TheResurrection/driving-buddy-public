@@ -13,7 +13,6 @@ import { spawn } from 'child_process';
 const app = express();
 const server = createServer(app);
 
-app.use(express.json());
 await connectDB();
 
 //app.use('/api/auth', authRoutes);
