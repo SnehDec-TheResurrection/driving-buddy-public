@@ -36,4 +36,6 @@ queue_of_events = fetch_items(sensorData)
 # read CSV row from stdin
 csv_row = sys.stdin.read().strip()
 print(csv_row)
+print("\n")
+print(f"And the queue contains: ${queue_of_events[0]}")
 
