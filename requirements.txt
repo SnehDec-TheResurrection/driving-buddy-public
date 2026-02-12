@@ -1,1 +1,2 @@
 pandas==3.0.0
+pymongo==4.16.0
