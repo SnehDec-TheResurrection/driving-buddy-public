@@ -9,6 +9,7 @@ import config from './config/index.js';
 //import sensorDataRoutes from './core/routes/sensorDataRoutes.js';
 import SensorData from './core/models/sensorDataModel.js';
 import { spawn } from 'child_process';
+import { WebSocketServer } from 'ws';
 
 const app = express();
 const server = createServer(app);
@@ -17,8 +18,21 @@ await connectDB();
 
 //app.use('/api/auth', authRoutes);
 //app.use('/api/sensor-data', sensorDataRoutes);
+app.use(express.json());
 app.use(express.text());
 
+const wss = new WebSocketServer({ server, path:'/websocky' });
+wss.on('connection', function connection(ws) {
+  ws.on('error', console.error);
+
+  ws.on('message', function message(data) {
+    console.log('received: %s', data);
+  });
+
+  ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
+});
+
+  
 server.listen((config.port || 3000), () => {
   console.log(`Server running on port ${config.port}`);
 });
