@@ -29,6 +29,7 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function message(data) {
      user_id = data;
      console.log(user_id);
+     ws.send(user_id);
   });
 
   ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
