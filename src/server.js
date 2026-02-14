@@ -20,13 +20,15 @@ await connectDB();
 //app.use('/api/sensor-data', sensorDataRoutes);
 app.use(express.json());
 app.use(express.text());
+let user_id = ""
 
 const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
   ws.on('error', console.error);
 
   ws.on('message', function message(data) {
-    console.log('received: %s', data);
+     user_id = data;
+     console.log(user_id);
   });
 
   ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
@@ -115,12 +117,9 @@ app.post("/esp32", async (req, res) => {
       csv_data = "00:12:00,1,2,3,4,5,right";
     }
     
-
     const fields = csv_data.split(",");
     //if (fields.length < 7) throw new Error("Invalid CSV");
-
-    const acceleration = parseFloat(fields[2]);
-    const rpm = parseFloat(fields[3]);
+    
     let lane_offset = parseFloat(fields[5]);
     let lane_offset_direction = fields[6];
     
@@ -141,14 +140,22 @@ app.post("/esp32", async (req, res) => {
 
 
     doc = {
+      userID: user_id,
       tripID: current_tripID,
       timestamp: time_with_date,
       speed: parseFloat(fields[1]),
-      acceleration,
-      rpm,
-      engine_load: parseFloat(fields[4]),
-      hard_braking: acceleration <= -3.0,
-      inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
+      throttle1: parseFloat(fields[2]),
+      throttle2: parseFloat(fields[3]), 
+      acc_pedald: parseFloat(fields[4]), 
+      acc_pedale: parseFloat(fields[5]), 
+      acc_pedalf: parseFloat(fields[6]),
+      throttle3: parseFloat(fields[7]),
+      acceleration_x: parseFloat(fields[8]), 
+      acceleration_y: parseFloat(fields[9]), 
+      acceleration_z: parseFloat(fields[10]), 
+      angular_acceleration: parseFloat(fields[11]), 
+      gps_latitude: parseFloat(fields[12]),
+      gps_longitude: parseFloat(fields[13]),
       lane_offset,
       lane_offset_direction,
       trip_ended
