@@ -5,6 +5,7 @@ import tensorflow as tf
 from pymongo import MongoClient
 
 window_size = 30 #editable parameter based on hardware sampling constraints. x Hz * 10 = window_size
+feature_columns = ["timestamp", "speed", "acceleration"] 
 
 def connect_to_DB():
   mongo_url = os.getenv("MONGO_URL")
@@ -30,11 +31,32 @@ def fetch_item(collection):
   last_item_singular = collection.find_one(sort=[("timestamp", -1)])
   return last_item_singular
 
+def calculate_yaw(queue_of_events): 
+  # add code to calculate yaw from multiple angular acceleration readings. idk if hardware will be doing this calculation already.
+
+def classifier(queue_of_events):
+  # The parameters that we care about for classification
+  average_acceleration = 0 # from accelerometer, simple average. One question: we have accel_x, accel_y, accel_z. We mainly want 
+                           # acceleration in the direction of motion of the car, considering we have angular acceleration and maybe 
+                           # don't need the 3D acceleration view. 
+  angular_acceleration = 0 # from gyroscope readings, simple average
+  acceleration_frequency = 0 # use the queue of events to calculate the number of 0-crossings, use that to find the Hz value.
+  jerk = 0 # average derivative of acceleration over time... needed or not? Can test.
+  # take the average of each attribute from feature_columns. By definition, we have a moving average, by using sliding windows.
+  #First, sum them up:
+  for doc in queue_of_events: 
+    average_acceleration += doc[acceleration]
+    angular_acceleration += doc [angular_acceleration]
+    # code for frequency tracking; check for change in sign
+    # save acceleration value of first and last packet in the queue to calculate overall jerk. 
+  
+  # Divide the summed values by 30 after completion of for loop
+  
+
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
 queue_of_events = fetch_items(sensorData)
 # Convert this into a tensor, X_test, to feed into the AI model. 
-feature_columns = ["timestamp", "speed", "acceleration"]
 data = np.array([
     [doc[col] for col in feature_columns]
     for doc in queue_of_events
