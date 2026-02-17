@@ -37,8 +37,8 @@ def calculate_yaw(queue_of_events):
 def classifier(queue_of_events):
   # The parameters that we care about for classification
   average_acceleration = 0 # from accelerometer, simple average. One question: we have accel_x, accel_y, accel_z. We mainly want 
-                           # acceleration in the direction of motion of the car, considering we have angular acceleration and maybe 
-                           # don't need the 3D acceleration view. 
+                           # acceleration in the direction of motion of the car, considering we have angular acceleration. 
+                          # Polar coordinates more useful? Look up how to convert x y z into polar (angle and radius). 
   angular_acceleration = 0 # from gyroscope readings, simple average
   acceleration_frequency = 0 # use the queue of events to calculate the number of 0-crossings, use that to find the Hz value.
   jerk = 0 # average derivative of acceleration over time... needed or not? Can test.
@@ -50,7 +50,7 @@ def classifier(queue_of_events):
     # code for frequency tracking; check for change in sign
     # save acceleration value of first and last packet in the queue to calculate overall jerk. 
   
-  # Divide the summed values by 30 after completion of for loop
+  # Divide the summed values by window_size after completion of for loop
   
 
 #Connect to DB and fetch last window_size JSON docs. 
