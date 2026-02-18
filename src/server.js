@@ -21,15 +21,19 @@ await connectDB();
 app.use(express.json());
 app.use(express.text());
 let user_id = ""
+let counter = 0 // counts whether a websocket message is being sent for the first time or not.
 
 const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
   ws.on('error', console.error);
 
   ws.on('message', function message(data) {
+    if(counter===0){
      user_id = data;
      console.log(user_id);
      ws.send(user_id);
+     counter +=1;
+    }
   });
 
   ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
