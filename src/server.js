@@ -136,7 +136,15 @@ app.post("/esp32", async (req, res) => {
       lane_offset_direction = "centre";
     }
     
-    const time_with_date = new Date();
+    const [hours, minutes, seconds] = fields[0].split(":").map(Number);
+    const now = new Date();
+    const time_with_date = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        hours,
+        minutes,
+        seconds);
 
     doc = {
       userID: user_id,
