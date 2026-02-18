@@ -136,32 +136,19 @@ app.post("/esp32", async (req, res) => {
       lane_offset_direction = "centre";
     }
     
-    const [hours, minutes, seconds] = fields[0].split(":").map(Number);
-    const now = new Date();
-    const time_with_date = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        hours,
-        minutes,
-        seconds);
-
+    const time_with_date = new Date();
 
     doc = {
       userID: user_id,
       tripID: current_tripID,
       timestamp: time_with_date,
       speed: parseFloat(fields[1]),
-      throttle1: parseFloat(fields[2]),
-      throttle2: parseFloat(fields[3]), 
-      acc_pedald: parseFloat(fields[4]), 
-      acc_pedale: parseFloat(fields[5]), 
-      acc_pedalf: parseFloat(fields[6]),
-      throttle3: parseFloat(fields[7]),
+      acc_pedal: parseFloat(fields[4]), 
       acceleration_x: parseFloat(fields[8]), 
       acceleration_y: parseFloat(fields[9]), 
       acceleration_z: parseFloat(fields[10]), 
-      angular_acceleration: parseFloat(fields[11]), 
+      angular_acceleration: parseFloat(fields[11]),
+      yaw, 
       gps_latitude: parseFloat(fields[12]),
       gps_longitude: parseFloat(fields[13]),
       lane_offset,
