@@ -56,8 +56,11 @@ app.get("/esp32", async (req, res) => {
   if (!doc) {
     return res.status(404).send("No data received yet.");
   }
-  res.json(doc); // <- use res.json instead of json.stringify
-
+  //res.json(doc); // <- use res.json for pretty printing on browser
+  //create a plain text string for sending to esp32
+  const responseString = Object.values(doc).join(",");
+  res.set("Content-Type", "text/plain");
+  res.send(responseString);
 
    // if(trip_ended){
     //return res.send(end_trip);
@@ -182,5 +185,5 @@ function formatTimestamp(date) {
   const hh = pad(date.getHours());
   const mi = pad(date.getMinutes());
   const ss = pad(date.getSeconds());
-  return `${dd}${mm}${yy}${hh}${mi}${ss}`;
+  return '${dd}${mm}${yy}${hh}${mi}${ss}';
 }
