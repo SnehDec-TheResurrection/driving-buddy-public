@@ -85,7 +85,7 @@ let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
 let end_trip = "";
 let trip_ended = false;
-
+/*
 app.post('/python', function(req,res){
 let output = ""
 const send_string = req.body;
@@ -107,6 +107,7 @@ const py = spawn('python3', ['src/python_backend.py']);
       res.send(`Python finished with code ${code}. Here is your row: ${output}`);
     });
   });
+*/
 
 app.post("/esp32", async (req, res) => {
   try {
