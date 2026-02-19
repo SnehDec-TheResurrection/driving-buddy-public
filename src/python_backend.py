@@ -40,14 +40,16 @@ def classifier(queue_of_events):
                            # acceleration in the direction of motion of the car, considering we have angular acceleration. 
                           # Polar coordinates more useful? Look up how to convert x y z into polar (angle and radius). 
   angular_acceleration = 0 # from gyroscope readings, simple average
-  acceleration_frequency = 0 # use the queue of events to calculate the number of 0-crossings, use that to find the Hz value.
+  acceleration_frequency = [] # use the queue of events to calculate the number of 0-crossings, use that to find the Hz value.
   jerk = 0 # average derivative of acceleration over time... needed or not? Can test.
   # take the average of each attribute from feature_columns. By definition, we have a moving average, by using sliding windows.
   #First, sum them up:
   for doc in queue_of_events: 
-    average_acceleration += doc[acceleration]
-    angular_acceleration += doc [angular_acceleration]
+    momentary_acceleration = doc[acceleration]
+    average_acceleration += momentary_acceleration
     # code for frequency tracking; check for change in sign
+    acceleration_frequency.append(momentary_acceleration)
+    angular_acceleration += doc [angular_acceleration]
     # save acceleration value of first and last packet in the queue to calculate overall jerk. 
   
   # Divide the summed values by window_size after completion of for loop
