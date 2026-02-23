@@ -36,6 +36,7 @@ def calculate_yaw(queue_of_events):
 
 def classifier(queue_of_events):
   # The parameters that we care about for classification
+  speed = 0
   average_acceleration = 0 # from accelerometer, simple average. Find the orientation and direction in which the car is moving and use the acceleration 
   angular_acceleration = 0 # from gyroscope readings, simple average
   acceleration_array = [] 
@@ -44,6 +45,7 @@ def classifier(queue_of_events):
   # take the average of each attribute from feature_columns. By definition, we have a moving average, by using sliding windows.
   #First, sum them up:
   for doc in queue_of_events: 
+    speed+=doc[speed]
     momentary_acceleration = doc[acceleration]
     average_acceleration += momentary_acceleration
     # code for frequency tracking; check for change in sign
@@ -54,7 +56,13 @@ def classifier(queue_of_events):
     # save acceleration value of first and last packet in the queue to calculate overall jerk. 
   
   # Divide the summed values by window_size after completion of for loop
+  speed = speed/window_size 
+  average_acceleration = average_acceleration/window_size
+  acceleration_frequency = acceleration_frequency/10 #10 seconds
+  angular_acceleration = angular_acceleration/window_size
 
+  # Put the final predicted packet 
+  
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
 queue_of_events = fetch_items(sensorData)
@@ -67,8 +75,11 @@ data = np.array([
 data_scaled = scaler.transform(data)
 #Add batch_size as a dimension to make it 3D, matches the X_train and y_train. Batch size is 1 because we only have 1 window.
 X_test = np.expand_dims(data_scaled, axis=0)
-# Put X_test tensor into the AI model.
-# Then, dequeue and then enqueue fetch_item(collection). 
+# Put X_test tensor into the AI model and receive the predicted_events queue.
+# Then, dequeue and then enqueue fetch_item(collection).
+next_packet = fetch_item(sensorData)
+dequeue(queue)
+enqueue(queue, next_packet)
 # rinse and repeat the above two steps throughout the drive. 
 # while loop for polling, can check mongoDB document ID of all items to verify if updates are ready to be propagated.
 
