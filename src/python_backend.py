@@ -34,14 +34,14 @@ def fetch_item(collection):
 def calculate_yaw(queue_of_events): 
   # add code to calculate yaw from multiple angular acceleration readings. idk if hardware will be doing this calculation already.
 
-def classifier(queue_of_events):
+def squish_into_average(queue_of_events):
   # The parameters that we care about for classification
   speed = 0
   average_acceleration = 0 # from accelerometer, simple average. Find the orientation and direction in which the car is moving and use the acceleration 
   angular_acceleration = 0 # from gyroscope readings, simple average
   acceleration_array = [] 
   acceleration_frequency = 0 # use the queue of events to calculate the number of 0-crossings, use that to find the Hz value.
-  jerk = 0 # average derivative of acceleration over time... needed or not? Can test.
+  jerk = 0 # peak derivative of acceleration between two readings
   # take the average of each attribute from feature_columns. By definition, we have a moving average, by using sliding windows.
   #First, sum them up:
   for doc in queue_of_events: 
@@ -53,7 +53,10 @@ def classifier(queue_of_events):
     if len(acceleration_array) > 1 and acceleration_array[-1] * acceleration_array[-2] < 0:
       acceleration_frequency +=1
     angular_acceleration += doc [angular_acceleration]
-    # save acceleration value of first and last packet in the queue to calculate overall jerk. 
+    if len(acceleration_array) >1: 
+      potential_peak_jerk = (acceleration_array[-1] - acceleration_array[-2])/0.5 # 0.5 seconds approximately between each reading.
+      if potential_peak_jerk > jerk: 
+        jerk = potential_peak_jerk
   
   # Divide the summed values by window_size after completion of for loop
   speed = speed/window_size 
@@ -61,7 +64,18 @@ def classifier(queue_of_events):
   acceleration_frequency = acceleration_frequency/10 #10 seconds
   angular_acceleration = angular_acceleration/window_size
 
-  # Put the final predicted packet 
+  return speed, average_acceleration, acceleration_frequency, angular_acceleration, jerk
+
+def classifier(speed, average_acceleration, acceleration_frequency, angular_acceleration, jerk):
+  #Sharp Turning
+  if average_acceleration > 3.0 or average_acceleration < -3.0: 
+    return "“Start slowing down early.”
+  #Sharp Braking
+  if angular_acceleration > 3.7 or angular_acceleration < 3.7:
+    return “Be careful before turning.”
+  #Inconsistent Acceleration
+  if jerk > 5 and acceleration_frequency < 0.3: 
+    return “Gradually speed up or slow down early.”
   
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
