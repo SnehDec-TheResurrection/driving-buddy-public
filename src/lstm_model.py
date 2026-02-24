@@ -129,7 +129,7 @@ def make_joint_targets_raw(X_raw, y_raw):
     #
     # outputs:
     # y_joint_raw: (N, H, 3) where channels are:
-    # 0: dyaw_step    (per-step yaw delta)
+    # 0: dyaw_to_last (yaw[t+k] - yaw_last_input)
     # 1: dv_to_last   (vel[t+k] - vel_last_input) for each horizon step k
     # 2: dacc_step    (per-step accel delta)
     # plus last inputs (yaw_last, vel_last, accel_last) in raw units to reconstruct ABS later.
@@ -147,10 +147,8 @@ def make_joint_targets_raw(X_raw, y_raw):
     # (1) velocity target: dv_to_last (future vel relative to the last input vel)
     y_joint[:, :, IDX_VEL] = y_raw[:, :, IDX_VEL] - vel_last
 
-    # (2) yaw target: per-step dyaw
-    # first horizon step is relative to yaw_last_input; subsequent are step-to-step deltas
-    y_joint[:, 0, IDX_YAW]  = y_raw[:, 0, IDX_YAW] - yaw_last[:, 0]
-    y_joint[:, 1:, IDX_YAW] = y_raw[:, 1:, IDX_YAW] - y_raw[:, :-1, IDX_YAW]
+    # (2) yaw target: dyaw_to_last
+    y_joint[:, :, IDX_YAW] = y_raw[:, :, IDX_YAW] - yaw_last
 
     # (3) accel target: per-step dacc
     y_joint[:, 0, IDX_ACCEL]  = y_raw[:, 0, IDX_ACCEL] - accel_last[:, 0]
@@ -253,8 +251,8 @@ y_pred_joint_raw = unscale_joint_preds(y_pred_joint_s)   # (N,30,3) in raw delta
 y_true_joint_raw = y_test_joint_raw                      # (N,30,3) in raw delta units
 
 # reconstruct ABS yaw/vel/accel predictions in original units
-# yaw_abs = yaw_last + cumsum(dyaw_step)
-yaw_pred_abs = yaw_last_test_raw + np.cumsum(y_pred_joint_raw[:, :, IDX_YAW], axis=1)
+# yaw_abs = yaw_last + dyaw_to_last
+yaw_pred_abs = yaw_last_test_raw + y_pred_joint_raw[:, :, IDX_YAW]
 yaw_true_abs = y_test[:, :, IDX_YAW]
 
 # vel_abs = vel_last + dv_to_last
