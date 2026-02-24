@@ -71,7 +71,7 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
   if abs(average_acceleration) > 3.0: 
     return "“Start slowing down early.”
   #Sharp Braking
-  if abs(acceleration_y) > 3.7 and abs(yaw_rate*speed/0.7):
+  if abs(acceleration_y) > 3.7 and abs(yaw_rate*speed):
     return “Be careful before turning.”
   #Inconsistent Acceleration
   if (jerk > 4 and acceleration_frequency < 0.3) or jerk > 9: 
