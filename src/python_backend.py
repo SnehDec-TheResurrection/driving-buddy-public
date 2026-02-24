@@ -66,16 +66,21 @@ def squish_into_average(queue_of_events):
 
   return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk
 
-def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk):
+def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction):
   #Sharp Turning
   if abs(average_acceleration) > 3.0: 
     return "Start slowing down early."
   #Sharp Braking
-  if abs(acceleration_y) > 3.7 and abs(yaw_rate*speed):
+  if abs(acceleration_y) > 3.7 or abs(yaw_rate*speed) > 3.7:
     return "Be careful before turning."
   #Inconsistent Acceleration
   if (jerk > 4 and acceleration_frequency < 0.3) or jerk > 9: 
     return "Gradually speed up or slow down early."
+  # Lane deviation
+  if(lane_deviation_direction == "left"):
+    return "Adjust to the right to stay centred in the lane."
+  elif(lane_deviation_direction == "right"):
+    return "Adjust to the left to stay centred in the lane."
   
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
