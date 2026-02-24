@@ -67,10 +67,10 @@ def squish_into_average(queue_of_events):
   return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk
 
 def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction):
-  #Sharp Turning
+  #Sudden Braking
   if abs(average_acceleration) > 3.0: 
     return "Start slowing down early."
-  #Sharp Braking
+  #Sharp Turning
   if abs(acceleration_y) > 3.7 or abs(yaw_rate*speed) > 3.7:
     return "Be careful before turning."
   #Inconsistent Acceleration
