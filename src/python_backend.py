@@ -5,6 +5,7 @@ import tensorflow as tf
 from pymongo import MongoClient
 
 window_size = 30 #editable parameter based on hardware sampling constraints. x Hz * 10 = window_size
+stride = 5 
 feature_columns = ["timestamp", "speed", "acceleration"] 
 
 def connect_to_DB():
@@ -20,16 +21,12 @@ def enqueue(queue, item):
 def dequeue(queue):
   queue.pop(0)
 
-def fetch_items(collection):
+def fetch_items(collection, number_of_items):
   last_thirty_items = list(
     collection.find()
     .sort("timestamp", 1)  # oldest first so that LSTM gets events in proper order
-    .limit(window_size))
+    .limit(number_of_items))
   return last_thirty_items
-
-def fetch_item(collection): 
-  last_item_singular = collection.find_one(sort=[("timestamp", -1)])
-  return last_item_singular
 
 def squish_into_average(queue_of_events):
   # The parameters that we care about for classification
@@ -84,7 +81,7 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
   
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
-queue_of_events = fetch_items(sensorData)
+queue_of_events = fetch_items(sensorData, window_size)
 # Convert this into a tensor, X_test, to feed into the AI model. 
 data = np.array([
     [doc[col] for col in feature_columns]
@@ -95,8 +92,8 @@ data_scaled = scaler.transform(data)
 #Add batch_size as a dimension to make it 3D, matches the X_train and y_train. Batch size is 1 because we only have 1 window.
 X_test = np.expand_dims(data_scaled, axis=0)
 # Put X_test tensor into the AI model and receive the predicted_events queue.
-# Then, dequeue and then enqueue fetch_item(collection).
-next_packet = fetch_item(sensorData)
+# Then, dequeue and then enqueue fetch_item(collection) 
+next_packet = fetch_items(sensorData, stride)
 dequeue(queue)
 enqueue(queue, next_packet)
 # rinse and repeat the above two steps throughout the drive. 
