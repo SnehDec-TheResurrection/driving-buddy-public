@@ -16,6 +16,10 @@ feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "
 trip_ended = False
 last_timestamp = 0
 current_trip_id=0
+inconsistent_speed_instances = 0 
+sudden_braking_instances = 0 
+sharp_turning_instances = 0
+lane_deviation_instances = 0 
 
 def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
@@ -97,6 +101,7 @@ def squish_into_average(queue_of_events):
         potential_peak_jerk = (acceleration_array[-1] - acceleration_array[-2])/0.5 # 0.5 seconds approximately between each reading.
         if potential_peak_jerk > jerk:
           jerk = potential_peak_jerk
+      lane_deviation_direction = doc["lane_offset_direction"]
 
     # Divide the summed values by window_size after completion of for loop
     speed = speed/window_size
@@ -105,7 +110,7 @@ def squish_into_average(queue_of_events):
     yaw_rate = yaw_rate/window_size
     acceleration_y = acceleration_y/window_size
 
-    return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk
+    return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction
 
 
 def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction):
@@ -152,6 +157,10 @@ predictions_queue = loaded_model.predict(X_test, batch_size=32)
 # Convert the predictions queue into usable values for vel and yaw
 # Scale using the sklearn scaler
 # classify real data
+squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+squished_lane_deviation_direction=squish_into_average(queue_of_events)
+verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+                     squished_lane_deviation_direction)
 # classify AI predicted data
 # Then, dequeue and then enqueue fetch_item(collection)
 while trip_ended == False:
