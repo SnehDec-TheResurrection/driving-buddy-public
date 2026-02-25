@@ -11,7 +11,7 @@ const sensorDataSchema = new mongoose.Schema({
   acceleration_z:{type:Number, required:true},
   yaw_rate:{type:Number, required:true},
   gps_latitude:{type:String, required:true},
-  gps_longitude:{type:String, required:true}
+  gps_longitude:{type:String, required:true},
     
   // steering_angle_deg: { type: Number },
   //sharp_turn: { type: Boolean },
