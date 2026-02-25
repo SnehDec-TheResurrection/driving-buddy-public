@@ -6,11 +6,16 @@ import keras as keras
 from pymongo import MongoClient
 import sklearn as sk
 import joblib
+import requests
+import time 
+import pika
 
 window_size = 30 #editable parameter based on hardware sampling constraints. x Hz * 10 = window_size
 stride = 5
 feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "yaw_rate"]
 trip_ended = False
+last_timestamp = 0
+current_trip_id=0
 
 def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
@@ -19,6 +24,29 @@ def connect_to_DB():
     collection = db["sensordatas"]
     return collection
 
+def message_dyno():
+    global current_trip_id
+      # 1. Get the shared connection URL
+    url = os.environ.get('CLOUDAMQP_URL')
+    params = pika.URLParameters(url)
+    connection = pika.BlockingConnection(params)
+    channel = connection.channel()
+        
+        # 2. "Join" the queue
+        # Note: We 'declare' it again just to be safe. 
+        # If it already exists (from Node), RabbitMQ just says "Yup, I know that one."
+    channel.queue_declare(queue='trip_signals', durable=True)
+        
+        # 3. Blocking wait for the Node.js message
+    print("Waiting for Node.js to send 'start_of_trip'...")
+        
+        # This is the "Sentry" loop we discussed
+    for method_frame, properties, body in channel.consume('trip_signals', auto_ack=True):
+        if "start_of_trip" in body.decode():
+            print("Signal received! Starting MongoDB fetch...")
+            current_trip_id = body.decode().split(',')[1]
+            break # Exit this loop to start your LSTM logic
+  
 
 def enqueue(queue, items):
     for item in items:
@@ -31,11 +59,17 @@ def dequeue(queue):
 
 
 def fetch_items(collection, number_of_items):
-    last_thirty_items = list(
-      collection.find()
-      .sort("timestamp", 1)  # oldest first so that LSTM gets events in proper order
-      .limit(number_of_items))
-    return last_thirty_items
+   global last_timestamp
+   while True:
+    query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
+    # Efficiently check the count without pulling the actual data
+    if collection.count_documents(query) >= number_of_items:
+        # Now that we know 30+ or 5+ exist, fetch them
+        last_group_of_items = list(collection.find(query).sort("timestamp", 1).limit(number_of_items))
+        last_timestamp = last_group_of_items[-1]['timestamp']
+        return last_group_of_items
+    else:
+        time.sleep(0.5)
 
 
 def squish_into_average(queue_of_events):
@@ -90,7 +124,8 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
     elif(lane_deviation_direction == "right"):
         return "Adjust to the left to stay centred in the lane."
 
-
+#Wait for start of trip and get Trip ID
+message_dyno()
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
 queue_of_events = fetch_items(sensorData, window_size)
@@ -99,20 +134,20 @@ data = np.array([
     [doc[col] for col in feature_columns]
     for doc in queue_of_events
 ])
-# Normalize data before putting into the model
-
-# Define the file path where the scaler is saved
+# Normalize data before putting into the model. Define the file path where the scaler is saved
 scaler_filename = 'artifacts\\scalerX.pkl'
 
 # Load the scaler from the file
 loaded_scaler = joblib.load(scaler_filename)
 
 data_scaled = loaded_scaler.transform(data)
-#Add batch_size as a dimension to make it 3D, matches the X_train and y_train. Batch size is 1 because we only have 1 window.
+
+
 X_test = np.expand_dims(data_scaled, axis=0)
 #Load the AI model from artifacts
 loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
-# Put X_test tensor into the AI model and receive the predicted_events queue.
+# Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
+# Batch size is 1 because we only have 1 window.
 predictions_queue = loaded_model.predict(X_test, batch_size=32)
 # Convert the predictions queue into usable values for vel and yaw
 # Scale using the sklearn scaler
@@ -123,7 +158,7 @@ while trip_ended == False:
     next_packets = fetch_items(sensorData, stride)
     dequeue(queue_of_events)
     enqueue(queue_of_events, next_packets)
-    if queue_of_events[-1]["timestamp"]=="end_of_trip_babe":
+    if queue_of_events[-1]["trip_ended"]==True:
         trip_ended=True
         break
     else:
@@ -131,9 +166,5 @@ while trip_ended == False:
 # rinse and repeat the above two steps throughout the drive. 
 # while loop for polling, can check mongoDB document ID of all items to verify if updates are ready to be propagated.
 
-# read CSV row from stdin
-#csv_row = sys.stdin.read().strip()
-#print(csv_row)
-#print("\n")
-#print(f"And the queue contains: ${queue_of_events[0]}")
+
 
