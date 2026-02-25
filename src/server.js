@@ -106,12 +106,12 @@ app.post("/esp32", async (req, res) => {
     //if (fields.length < 7) throw new Error("Invalid CSV");
 
     let lane_offset = 0;
-   // let lane_offset_direction = fields[6];
+   let lane_offset_direction = "centre";
     
-    if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
-      lane_offset = 0; 
-      lane_offset_direction = "centre";
-    }
+    //if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
+      //lane_offset = 0; 
+      //lane_offset_direction = "centre";
+    //}
     
     const [hours, minutes, seconds] = fields[1].split(":").map(Number);
     const now = new Date();
