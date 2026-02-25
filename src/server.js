@@ -145,9 +145,9 @@ app.post("/esp32", async (req, res) => {
     res.send("Received row!");
     //console.log(doc);
   } catch (err) {
-    console.error("ESP32 route error:", err);
-    res.sendStatus(500);
-  }
+    console.error("DETAILED ERROR:", err.message); // This tells you the EXACT line that failed
+    res.status(500).send("Crash reason: " + err.message);
+}
 });
 
 
