@@ -13,6 +13,7 @@ import { WebSocketServer } from 'ws';
 
 const app = express();
 const server = createServer(app);
+const EventEmitter = require("events");
 
 await connectDB();
 
@@ -23,7 +24,17 @@ app.use(express.text());
 let user_id = ""
 let counter = 0 // counts whether a websocket message is being sent for the first time or not.
 
-const wss = new WebSocketServer({ server, path:'/websocky' });
+// using events to get websockets to send data
+
+const trip_status = new EventEmitter();
+const dashboard_recommender = new EventEmitter();
+
+// Whenever your start/end flag changes, emit an event used by the websocket:
+function onTripStatusChange(newFlagValue) {
+    trip_status.emit("trip_status", newFlagValue);
+}
+
+const wss = new WebSocketServer({ noServer:true, path:'/websocky' });
 wss.on('connection', function connection(ws) {
   ws.on('error', console.error);
 
@@ -36,8 +47,39 @@ wss.on('connection', function connection(ws) {
     }
   });
 
+    // Send flag updates to ESP32 when dashboard recommendations come in
+  dashboard_recommender.on("flagChanged", (newFlag) => {
+      ws.send(JSON.stringify({ type: newFlag }));
+  });
+
   ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
 });
+
+const wssPython = new WebSocketServer({ noServer: true, path: '/python' });
+let pythonClient = null;
+
+wssPython.on("connection", (ws) => {
+  console.log("Python connected");
+  pythonClient = ws;
+
+  //Receive dashboard messages
+  pythonClient.on('message', function message(data) {
+   // Emit event for WebSocket
+      dashboard_recommender.emit("flagChanged", data);
+  });
+
+  // Send flag updates to Python when trip_status changes
+  trip_status.on("flagChanged", (newFlag) => {
+    if (pythonClient && pythonClient.readyState === ws.OPEN) {
+      pythonClient.send(JSON.stringify({ type: newFlag }));
+    }
+  });
+
+  ws.on("close", () => {
+    pythonClient = null;
+  });
+});
+
 
   
 server.listen((config.port || 3000), () => {
@@ -85,44 +127,52 @@ let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
 let end_trip = "";
 let trip_ended = false;
-/*
-app.post('/python', function(req,res){
-let output = ""
-const send_string = req.body;
+let dashboard_recommendations = ""
+
+//app.post('/from-python', function(req,res){
+  //  dashboard_recommendations += req.body;
+  //});
+//const send_string = req.body;
 //spawn python
-const py = spawn('python3', ['src/python_backend.py']);
+//const py = spawn('python3', ['src/python_backend.py']);
 
-  py.stdin.write(send_string);
-  py.stdin.end();
+//  py.stdin.write(send_string);
+ // py.stdin.end();
 
-  py.stdout.on('data', data => {
-    console.log(`Python says: ${data}`);
-    output += data;
-  });
+//  py.stdout.on('data', data => {
+//    console.log(`Python says: ${data}`);
+ //   output += data;
+  
 
-  py.stderr.on('data', data => {
-    console.error(`Python error: ${data}`);
-  });
-  py.on('close', code => {
-      res.send(`Python finished with code ${code}. Here is your row: ${output}`);
-    });
-  });
-*/
+  //py.stderr.on('data', data => {
+  //  console.error(`Python error: ${data}`);
+  //});
+  //py.on('close', code => {
+  //    res.send(`Python finished with code ${code}. Here is your row: ${output}`);
+   // });
+  //});
+
 
 app.post("/esp32", async (req, res) => {
   try {
     let csv_data = req.body;
     if (csv_data === "start_of_trip") {
+      trip_status_value="trip_started";
       end_trip = "";
       trip_ended = false;
       const now = new Date();
       current_tripID = formatTimestamp(now);
+      // Emit event for WebSocket
+      trip_status.emit("flagChanged", trip_status_value);
       return res.sendStatus(200);
     }
 
     else if (csv_data === "end_of_trip"){
+      trip_status_value= "trip_ended";
       end_trip ="Thank you for driving!";
       trip_ended = true;
+      // Emit event for WebSocket
+      trip_status.emit("flagChanged", trip_status_value);
       csv_data = "00:12:00,1,2,3,4,5,right";
     }
     
