@@ -99,7 +99,7 @@ app.post("/esp32", async (req, res) => {
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
       trip_ended = true;
-      csv_data = "00:12:00,1,2,3,4,5,right";
+      csv_data = "user, 00:12:00,1,2,3,4,5,6,latu, longu, right";
     }
     
 
@@ -135,8 +135,8 @@ app.post("/esp32", async (req, res) => {
       acceleration_y: parseFloat(fields[5]), 
       acceleration_z: parseFloat(fields[6]), 
       yaw_rate: parseFloat(fields[7]),
-      gps_latitude: parseFloat(fields[8]),
-      gps_longitude: parseFloat(fields[9]),
+      gps_latitude: fields[8],
+      gps_longitude: fields[9],
       lane_offset,
       lane_offset_direction,
       trip_ended
