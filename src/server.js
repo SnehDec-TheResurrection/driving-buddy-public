@@ -35,6 +35,18 @@ function onTripStatusChange(newFlagValue) {
 }
 
 const wss = new WebSocketServer({ noServer:true, path:'/websocky' });
+const wssPython = new WebSocketServer({ noServer: true, path: '/python' });
+
+server.on("upgrade", (req, socket, head) => {
+  if (req.url === "/websocky") {
+    wssESP.handleUpgrade(req, socket, head, ws => wssESP.emit("connection", ws, req));
+  } else if (req.url === "/python") {
+    wssPython.handleUpgrade(req, socket, head, ws => wssPython.emit("connection", ws, req));
+  } else {
+    socket.destroy();
+  }
+});
+
 wss.on('connection', function connection(ws) {
   ws.on('error', console.error);
 
@@ -55,7 +67,6 @@ wss.on('connection', function connection(ws) {
   ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
 });
 
-const wssPython = new WebSocketServer({ noServer: true, path: '/python' });
 let pythonClient = null;
 
 wssPython.on("connection", (ws) => {
