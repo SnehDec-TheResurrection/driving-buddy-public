@@ -133,7 +133,7 @@ app.post("/esp32", async (req, res) => {
       acceleration_x: parseFloat(fields[4]), 
       acceleration_y: parseFloat(fields[5]), 
       acceleration_z: parseFloat(fields[6]), 
-      yaw_rate: parseFloat(fields[7])
+      yaw_rate: parseFloat(fields[7]),
       gps_latitude: parseFloat(fields[8]),
       gps_longitude: parseFloat(fields[9]),
       lane_offset,
