@@ -10,9 +10,16 @@ import config from './config/index.js';
 import SensorData from './core/models/sensorDataModel.js';
 import { spawn } from 'child_process';
 import { WebSocketServer } from 'ws';
+import { EventEmitter } from 'events';
 
 const app = express();
 const server = createServer(app);
+
+const dashboard_recommendation = new EventEmitter();
+
+function on_rec(newRecValue) {
+    dashboard_recommendation.emit("new_recommendation", newRecValue);
+}
 
 await connectDB();
 
@@ -21,12 +28,15 @@ await connectDB();
 app.use(express.json());
 app.use(express.text());
 let user_id = ""
-let counter = 0 // counts whether a websocket message is being sent for the first time or not.
+let last_recommendation_time = 0 //helps set a cooldown period for python dashboard recommendations
+const COOLDOWN_MS = 60000;       // 1 minute in milliseconds
+let client = null;
 
 const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
+  let counter = 0 // counts whether a websocket message is being sent for the first time or not.
   ws.on('error', console.error);
-
+  client = ws;
   ws.on('message', function message(data) {
     if(counter===0){
      user_id = data;
@@ -39,6 +49,9 @@ wss.on('connection', function connection(ws) {
   ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
 });
 
+  dashboard_recommendation.on("new_recommendation", (newRecValue) => {
+        client.send(newRecValue);
+    });
   
 server.listen((config.port || 3000), () => {
   console.log(`Server running on port ${config.port}`);
@@ -65,47 +78,26 @@ app.get("/esp32", async (req, res) => {
   const responseString = Object.values(doc).join(",");
   res.set("Content-Type", "text/plain");
   res.send(responseString);
-
-   // if(trip_ended){
-    //return res.send(end_trip);
-  //}
- // try {
- //   const latestEntry = await SensorData.findOne().sort({ timestamp: -1 }); // sort by most recent timestamp
- //   if (!latestEntry) return res.status(404).send("No data in database yet.");
- //   res.json(latestEntry);
- // } catch (err) {
- //   console.error("Error fetching latest sensor data:", err);
-  //  res.sendStatus(500);
- // }
-
-});
-
+})
 
 let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
 let end_trip = "";
 let trip_ended = false;
-let dashboard_recommendation = ""
+let dashboard_recommendation_value = ""
 
 app.post('/python', function(req,res){
-//const send_string = req.body;
-//spawn python
-const py = spawn('python3', ['src/python_backend.py']);
-
-  //py.stdin.write(req.body);
-  //py.stdin.end();
-
-  py.stdout.on('data', data => {
-    console.log(`Python says: ${data}`);
-    dashboard_recommendation += data;
-  });
-
-  py.stderr.on('data', data => {
-    console.error(`Python error: ${data}`);
-  });
-  py.on('close', code => {
-      res.send(`Python finished with code ${code}. Here is your row: ${output}`);
-    });
+    const current = Date.now();
+    const time_difference = current-last_recommendation_time;
+    if (req.body == dashboard_recommendation_value && time_difference < COOLDOWN_MS){
+      on_rec("Duplicate");
+    }
+  else{
+    dashboard_recommendation_value = req.body;
+    on_rec(dashboard_recommendation_value);
+    last_recommendation_time = Date.now()
+  }
+  res.sendStatus(200)
   });
 
 
