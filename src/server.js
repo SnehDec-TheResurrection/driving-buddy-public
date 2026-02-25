@@ -158,21 +158,21 @@ app.post("/esp32", async (req, res) => {
     let csv_data = req.body;
     if (csv_data === "start_of_trip") {
       trip_status_value="trip_started";
+       // Emit event for WebSocket
+      trip_status.emit("flagChanged", trip_status_value);
       end_trip = "";
       trip_ended = false;
       const now = new Date();
       current_tripID = formatTimestamp(now);
-      // Emit event for WebSocket
-      trip_status.emit("flagChanged", trip_status_value);
       return res.sendStatus(200);
     }
 
     else if (csv_data === "end_of_trip"){
       trip_status_value= "trip_ended";
-      end_trip ="Thank you for driving!";
-      trip_ended = true;
       // Emit event for WebSocket
       trip_status.emit("flagChanged", trip_status_value);
+      end_trip ="Thank you for driving!";
+      trip_ended = true;
       csv_data = "00:12:00,1,2,3,4,5,right";
     }
     
@@ -235,5 +235,5 @@ function formatTimestamp(date) {
   const hh = pad(date.getHours());
   const mi = pad(date.getMinutes());
   const ss = pad(date.getSeconds());
-  return '${dd}${mm}${yy}${hh}${mi}${ss}';
+  return `${dd}${mm}${yy}${hh}${mi}${ss}`;
 }
