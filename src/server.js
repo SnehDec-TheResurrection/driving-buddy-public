@@ -149,10 +149,7 @@ app.post("/esp32", async (req, res) => {
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
       trip_ended = true;
-      amqpChannel.sendToQueue('trip_signals', Buffer.from("trip_ended_babe"), {
-        persistent: true 
-});
-      csv_data = "trip_ended_babe,1,2,3,4,5,right";
+      csv_data = "00:12:00,1,2,3,4,5,right";
     }
     
     const fields = csv_data.split(",");
