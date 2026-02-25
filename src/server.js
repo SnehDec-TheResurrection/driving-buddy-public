@@ -140,7 +140,7 @@ app.post("/esp32", async (req, res) => {
       trip_ended = false;
       const now = new Date();
       current_tripID = formatTimestamp(now);
-      amqpChannel.sendToQueue('trip_signals', Buffer.from("start_of_trip"), {
+      amqpChannel.sendToQueue('trip_signals', Buffer.from(`start_of_trip,${current_tripID}`), {
         persistent: true 
 });
       return res.sendStatus(200);
