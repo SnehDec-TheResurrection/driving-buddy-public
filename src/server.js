@@ -105,10 +105,8 @@ app.post("/esp32", async (req, res) => {
     const fields = csv_data.split(",");
     //if (fields.length < 7) throw new Error("Invalid CSV");
 
-    const acceleration = parseFloat(fields[2]);
-    const rpm = parseFloat(fields[3]);
-    let lane_offset = parseFloat(fields[5]);
-    let lane_offset_direction = fields[6];
+    let lane_offset = 0;
+   // let lane_offset_direction = fields[6];
     
     if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
       lane_offset = 0; 
@@ -127,14 +125,17 @@ app.post("/esp32", async (req, res) => {
 
 
     doc = {
+      userID: user_id,
       tripID: current_tripID,
       timestamp: time_with_date,
       speed: parseFloat(fields[1]),
-      acceleration,
-      rpm,
-      engine_load: parseFloat(fields[4]),
-      hard_braking: acceleration <= -3.0,
-      inconsistent_speed: acceleration >= 3.0 && rpm >= 3500,
+      acc_pedal: parseFloat(fields[2]), 
+      acceleration_x: parseFloat(fields[3]), 
+      acceleration_y: parseFloat(fields[4]), 
+      acceleration_z: parseFloat(fields[5]), 
+      yaw_rate = parseFloat(fields[6])
+      gps_latitude: parseFloat(fields[7]),
+      gps_longitude: parseFloat(fields[8]),
       lane_offset,
       lane_offset_direction,
       trip_ended
