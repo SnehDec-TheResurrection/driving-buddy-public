@@ -11,11 +11,18 @@ import SensorData from './core/models/sensorDataModel.js';
 import { spawn } from 'child_process';
 import { WebSocketServer } from 'ws';
 import { EventEmitter } from 'events';
+import amqp from 'amqplib';
 
 const app = express();
 const server = createServer(app);
 
 const dashboard_recommendation = new EventEmitter();
+
+let current_tripID = null; // Global variable to keep track of active tripID
+let doc = null;
+let end_trip = "";
+let trip_ended = false;
+let dashboard_recommendation_value = ""
 
 function on_rec(newRecValue) {
     dashboard_recommendation.emit("new_recommendation", newRecValue);
@@ -31,6 +38,50 @@ let user_id = ""
 let last_recommendation_time = 0 //helps set a cooldown period for python dashboard recommendations
 const COOLDOWN_MS = 60000;       // 1 minute in milliseconds
 let client = null;
+
+let amqpChannel = null;
+
+async function connectMQ() {
+    try {
+        // 1. Establish the persistent connection
+        const connection = await amqp.connect(process.env.CLOUDAMQP_URL);
+        
+        // 2. Create the logical channel for communication
+        amqpChannel = await connection.createChannel();
+
+        // 3. Define the two 'lanes' (Queues)
+        // One for sending trip start/end signals, one for receiving predictions
+        await amqpChannel.assertQueue('trip_signals', { durable: true });
+        await amqpChannel.assertQueue('predictions', { durable: true });
+
+        // 4. SET UP THE LISTENER (Lane: Python -> Node)
+        // This runs automatically whenever the Python worker sends text back
+        amqpChannel.consume('predictions', (msg) => {
+            if (msg !== null) {
+                const predictionText = msg.content.toString();
+                const current = Date.now();
+                const time_difference = current-last_recommendation_time;
+                if (predictionText == dashboard_recommendation_value && time_difference < COOLDOWN_MS){
+                      on_rec("Duplicate");
+                                }
+                else{
+                    dashboard_recommendation_value = predictionText;
+                    on_rec(dashboard_recommendation_value);
+                    last_recommendation_time = Date.now()
+              }
+                
+
+                amqpChannel.ack(msg); // Confirms receipt to the broker
+            }
+        });
+
+        console.log("[MQ] Two-way AMQP ready.");
+    } catch (err) {
+        console.error("[MQ] Connection failed:", err);
+    }
+}
+
+connectMQ();
 
 const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
@@ -80,26 +131,6 @@ app.get("/esp32", async (req, res) => {
   res.send(responseString);
 })
 
-let current_tripID = null; // Global variable to keep track of active tripID
-let doc = null;
-let end_trip = "";
-let trip_ended = false;
-let dashboard_recommendation_value = ""
-
-app.post('/python', function(req,res){
-    const current = Date.now();
-    const time_difference = current-last_recommendation_time;
-    if (req.body == dashboard_recommendation_value && time_difference < COOLDOWN_MS){
-      on_rec("Duplicate");
-    }
-  else{
-    dashboard_recommendation_value = req.body;
-    on_rec(dashboard_recommendation_value);
-    last_recommendation_time = Date.now()
-  }
-  res.sendStatus(200)
-  });
-
 
 app.post("/esp32", async (req, res) => {
   try {
@@ -109,12 +140,18 @@ app.post("/esp32", async (req, res) => {
       trip_ended = false;
       const now = new Date();
       current_tripID = formatTimestamp(now);
+      amqpChannel.sendToQueue('trip_signals', Buffer.from("start_of_trip"), {
+        persistent: true 
+});
       return res.sendStatus(200);
     }
 
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
       trip_ended = true;
+      amqpChannel.sendToQueue('trip_signals', Buffer.from("trip_ended_babe"), {
+        persistent: true 
+});
       csv_data = "trip_ended_babe,1,2,3,4,5,right";
     }
     
