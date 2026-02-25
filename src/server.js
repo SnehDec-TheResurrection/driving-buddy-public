@@ -86,8 +86,8 @@ const py = spawn('python3', ['src/python_backend.py']);
 
 app.post("/esp32", async (req, res) => {
   try {
-    console.log(`Received: [${csv_data}]`);
     let csv_data = req.body;
+    console.log(`Received: [${csv_data}]`);
     if (csv_data === "start_of_trip") {
       end_trip = "";
       trip_ended = false;
