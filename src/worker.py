@@ -136,7 +136,7 @@ sensorData = connect_to_DB()
 queue_of_events = fetch_items(sensorData, window_size)
 # Convert this into a tensor, X_test, to feed into the AI model.
 data = np.array([
-    [doc[col] for col in feature_columns]
+    [doc[col] for col in ["speed" ,"accel_pedal", "yaw_rate"]]
     for doc in queue_of_events
 ])
 # Normalize data before putting into the model. Define the file path where the scaler is saved
@@ -147,13 +147,12 @@ loaded_scaler = joblib.load(scaler_filename)
 
 data_scaled = loaded_scaler.transform(data)
 
-
 X_test = np.expand_dims(data_scaled, axis=0)
 #Load the AI model from artifacts
 loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
 # Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
 # Batch size is 1 because we only have 1 window.
-predictions_queue = loaded_model.predict(X_test, batch_size=32)
+predictions_queue = loaded_model.predict(X_test, batch_size=1)
 # Convert the predictions queue into usable values for vel and yaw
 # Scale using the sklearn scaler
 # classify real data
