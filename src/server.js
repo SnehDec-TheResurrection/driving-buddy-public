@@ -115,7 +115,7 @@ app.post("/esp32", async (req, res) => {
     //}
 
     let time_with_date = new Date();
-    if(fields[1]){
+    if(fields[1] != "0"){
     const [hours, minutes, seconds] = fields[1].split(":").map(Number);
     const now = new Date();
     time_with_date = new Date(
@@ -150,7 +150,7 @@ app.post("/esp32", async (req, res) => {
     //console.log(doc);
   } catch (err) {
     console.error("DETAILED ERROR:", err.message); // This tells you the EXACT line that failed
-    res.status(500).send("Crash reason: " + err.message);
+    res.status(500).send("csv_data " + csv_data);
 }
 });
 
