@@ -58,19 +58,8 @@ async function connectMQ() {
         // This runs automatically whenever the Python worker sends text back
         amqpChannel.consume('predictions', (msg) => {
             if (msg !== null) {
-                const predictionText = msg.content.toString();
-                const current = Date.now();
-                const time_difference = current-last_recommendation_time;
-                if (predictionText == dashboard_recommendation_value && time_difference < COOLDOWN_MS){
-                      on_rec("Duplicate");
-                                }
-                else{
-                    dashboard_recommendation_value = predictionText;
-                    on_rec(dashboard_recommendation_value);
-                    last_recommendation_time = Date.now()
-              }
-                
-
+                dashboard_recommendation_value = msg;
+                on_rec(dashboard_recommendation_value);
                 amqpChannel.ack(msg); // Confirms receipt to the broker
             }
         });
