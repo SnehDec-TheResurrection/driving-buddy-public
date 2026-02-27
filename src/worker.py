@@ -10,7 +10,6 @@ import requests
 import time 
 import pika
 from datetime import datetime, date, timedelta
-import "lstm_model.py"
 
 window_size = 30 #editable parameter based on hardware sampling constraints. x Hz * 10 = window_size
 stride = 5
