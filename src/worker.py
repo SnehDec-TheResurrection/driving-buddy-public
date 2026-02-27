@@ -125,7 +125,7 @@ def fetch_items(collection, number_of_items):
         
 def convert_into_tensor(queue_of_events):
     data = np.array([
-    [doc[col] for col in ["yaw" ,"speed", "accel_pedal"]]
+    [doc[col] for col in ["yaw_rate" ,"speed", "accel_pedal"]]
     for doc in queue_of_events
         ])
     return data
@@ -220,7 +220,6 @@ verdict = classifier(squished_speed, squished_average_acceleration, squished_acc
 cooldown(verdict)
 increment_persistent_data(dashboard_recommendation_value)
 # classify AI predicted data and send to the dashboard display 
-
 # Then, dequeue and then enqueue fetch_item(collection)
 while trip_ended == False:
     next_packets = fetch_items(sensorData, stride)
