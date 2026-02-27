@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 
 const sensorDataSchema = new mongoose.Schema({
+  userID:{type:String, required:true},
   tripID: {type: String, required: true},
   timestamp:{type:Date, required:true},
   speed: { type: Number, required: true },
