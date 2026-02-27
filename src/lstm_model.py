@@ -2,19 +2,21 @@ import numpy as np
 import pandas as pd
 import glob
 
-import os
-import joblib
+import matplotlib.pyplot as plt
 
 from tensorflow.keras import Input
+from tensorflow import constant, square, reduce_mean, float32, reshape 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.losses import Huber
+from tensorflow.keras.losses import MeanSquaredError, Huber
 from tensorflow.keras.metrics import RootMeanSquaredError, MeanAbsoluteError
 from tensorflow.keras.layers import Dense, Input, LSTM
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.models import load_model
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 # joint model! 
 
@@ -53,6 +55,9 @@ for file in files:
         
         drives.append(df_5hz)
 
+# sanity check
+print(drives[0])  # [15391 rows x 2 columns]
+
 # =============================================================================
 # 2) windowing (input_len=30 → predict next output_len=30)
 # =============================================================================
@@ -89,6 +94,9 @@ for drive in drives:
 X_all = np.concatenate(X_all, axis=0)
 y_all = np.concatenate(y_all, axis=0)
 
+print("XALL", X_all, X_all.shape)  # (382680, 30, 2)
+print("YALL", y_all, y_all.shape)  # (382680, 30, 2)
+
 # =============================================================================
 # 3) train/test split
 # =============================================================================
@@ -97,6 +105,9 @@ y_all = np.concatenate(y_all, axis=0)
 X_train, X_test, y_train, y_test = train_test_split(
     X_all, y_all, test_size=0.2, shuffle=False  # shuffle=False is important for time series
 )
+
+# print(np.isnan(X_train).any())  # False!
+# print(np.isnan(y_train).any())  # False!
 
 # =============================================================================
 # 4) scaling + targets
@@ -117,12 +128,12 @@ def make_joint_targets_raw(X_raw, y_raw):
     # build joint targets in RAW/original units.
     #
     # inputs:
-    # X_raw, y_raw: (N, H, 3) where H=30 and features are [yaw, vel, accel_pedal]
+    # X_raw, y_raw: (N, H, 2) where H=30 and features are [yaw, vel]
     # these are absolute values in original units.
     #
     # outputs:
     # y_joint_raw: (N, H, 2) where channels are:
-    # 0: dyaw_to_last  (yaw[t+k] - yaw_last_input) for each horizon step k
+    # 0: dyaw_step    (per-step yaw delta)
     # 1: dv_to_last   (vel[t+k] - vel_last_input) for each horizon step k
     # plus last inputs (yaw_last, vel_last) in raw units to reconstruct ABS later.
 
@@ -161,7 +172,8 @@ scaler_dyaw.fit(y_train_joint_raw[:, :, IDX_YAW].reshape(-1, 1))
 scaler_dv.fit(  y_train_joint_raw[:, :, IDX_VEL].reshape(-1, 1))
 
 def scale_joint_targets(y_joint_raw):
-    # applies the per-target scalers and returns (N,H,2) float32
+    # applies the per-target scalers and returns (N,H,3) float32
+
     y_s = np.zeros_like(y_joint_raw, dtype=np.float32)
     y_s[:, :, IDX_YAW]   = scaler_dyaw.transform(y_joint_raw[:, :, IDX_YAW].reshape(-1, 1)).reshape(y_joint_raw.shape[0], y_joint_raw.shape[1])
     y_s[:, :, IDX_VEL]   = scaler_dv.transform(  y_joint_raw[:, :, IDX_VEL].reshape(-1, 1)).reshape(y_joint_raw.shape[0], y_joint_raw.shape[1])
@@ -170,9 +182,19 @@ def scale_joint_targets(y_joint_raw):
 y_train_joint_s = scale_joint_targets(y_train_joint_raw)
 y_test_joint_s  = scale_joint_targets(y_test_joint_raw)
 
+print("X_train_s", X_train_s.shape, "y_train_joint_s", y_train_joint_s.shape)
+print("X_test_s ", X_test_s.shape,  "y_test_joint_s ", y_test_joint_s.shape)
+
+# X_train_s (306144, 30, 3) y_train_joint_s (306144, 30, 3)
+# X_test_s  (76536, 30, 3) y_test_joint_s  (76536, 30, 3)
+
 # =============================================================================
 # 5) model definition + training
 # =============================================================================
+print("Drive columns:", drives[0].columns.tolist())  # should be ['yaw','vel','accel_pedal']
+print("X_all shape:", X_all.shape)  # (N,30,3)
+print("y_all shape:", y_all.shape)  # (N,30,2)
+
 num_features = 3
 
 model_joint = Sequential([
@@ -204,19 +226,168 @@ history_joint = model_joint.fit(
     callbacks=[early_stopping]
 )
 
-# ------ save model + scalers ------
-ARTIFACT_DIR = "artifacts"
-os.makedirs(ARTIFACT_DIR, exist_ok=True)
+# =============================================================================
+# 6) evaluation: unscale → reconstruct ABS predictions → compare vs persistence
+# =============================================================================
 
-# save keras model (architecture + weights)
-MODEL_PATH = os.path.join(ARTIFACT_DIR, "trained_lstm_model.keras")
-model_joint.save(MODEL_PATH)
+def unscale_joint_preds(y_pred_s):
+    # inverse-transform scaled predictions back to raw target units (still deltas).
 
-# save scalers needed for inference
-joblib.dump(scalerX, os.path.join(ARTIFACT_DIR, "scalerX.pkl"))
-joblib.dump(scaler_dyaw, os.path.join(ARTIFACT_DIR, "scaler_dyaw.pkl"))
-joblib.dump(scaler_dv, os.path.join(ARTIFACT_DIR, "scaler_dv.pkl"))
+    N, H, _ = y_pred_s.shape
+    y_pred_raw = np.zeros_like(y_pred_s, dtype=np.float32)
+    y_pred_raw[:, :, IDX_YAW]   = scaler_dyaw.inverse_transform(y_pred_s[:, :, IDX_YAW].reshape(-1, 1)).reshape(N, H)
+    y_pred_raw[:, :, IDX_VEL]   = scaler_dv.inverse_transform(  y_pred_s[:, :, IDX_VEL].reshape(-1, 1)).reshape(N, H)
+    return y_pred_raw
 
-print(f"\nSaved model to: {MODEL_PATH}")
-print(f"Saved scalers to: {ARTIFACT_DIR}/scalerX.pkl, scaler_dyaw.pkl, scaler_dv.pkl")
+def rmse(a, b):
+    return float(np.sqrt(np.mean((a - b) ** 2)))
 
+# predict scaled joint targets (deltas)
+y_pred_joint_s = model_joint.predict(X_test_s, batch_size=256, verbose=0)
+y_pred_joint_raw = unscale_joint_preds(y_pred_joint_s)   # (N,30,2) in raw delta units
+y_true_joint_raw = y_test_joint_raw                      # (N,30,2) in raw delta units
+
+# reconstruct ABS yaw/vel/accel predictions in original units
+# yaw_abs = yaw_last + dv_to_last
+yaw_pred_abs = yaw_last_test_raw + y_pred_joint_raw[:, :, IDX_YAW]
+yaw_true_abs = y_test[:, :, IDX_YAW]
+
+# vel_abs = vel_last + dv_to_last
+vel_pred_abs = vel_last_test_raw + y_pred_joint_raw[:, :, IDX_VEL]
+vel_true_abs = y_test[:, :, IDX_VEL]
+
+# persistence baseline (repeat last input)
+yaw_base = np.repeat(yaw_last_test_raw[:, None, :], repeats=yaw_true_abs.shape[1], axis=1)[:, :, 0]
+vel_base = np.repeat(vel_last_test_raw[:, None, :], repeats=vel_true_abs.shape[1], axis=1)[:, :, 0]
+
+print("\n=== Joint model ABS (original units) RMSE vs persistence ===")
+print("Yaw RMSE     | Model:", rmse(yaw_pred_abs, yaw_true_abs), "| Baseline:", rmse(yaw_base, yaw_true_abs))
+print("Vel RMSE     | Model:", rmse(vel_pred_abs, vel_true_abs), "| Baseline:", rmse(vel_base, vel_true_abs))
+
+# overall RMSE across the 3 features
+y_pred_stack = np.stack([yaw_pred_abs, vel_pred_abs], axis=2)
+y_true_stack = np.stack([yaw_true_abs, vel_true_abs], axis=2)
+y_base_stack = np.stack([yaw_base, vel_base], axis=2)
+
+print("Overall RMSE | Model:", rmse(y_pred_stack, y_true_stack), "| Baseline:", rmse(y_base_stack, y_true_stack))
+
+# =============================================================================
+# 7) plotting (save to disk)
+# =============================================================================
+
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+
+def _downsample_xy(t, p, max_points, seed=0):
+    n = t.shape[0]
+    if n > max_points:
+        rng = np.random.default_rng(seed)
+        idx = rng.choice(n, size=max_points, replace=False)
+        t = t[idx]
+        p = p[idx]
+    return t, p
+
+def _scatter_plot(t, p, title, xlabel, ylabel, out_path=None, show=False):
+    plt.figure()
+    plt.scatter(t, p, s=1, alpha=0.3)
+
+    lo = float(min(t.min(), p.min()))
+    hi = float(max(t.max(), p.max()))
+    plt.plot([lo, hi], [lo, hi])  # y=x reference
+
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.grid(True)
+
+    if out_path is not None:
+        plt.tight_layout()
+        plt.savefig(out_path, dpi=200)
+    if show:
+        plt.show()
+    plt.close()
+
+def save_scatter_all_horizons(y_true_abs, y_pred_abs, name, save_dir="plots", max_points=200_000, show=False):
+    """
+    Saves a single 'all horizons' scatter for a signal.
+    y_true_abs, y_pred_abs: (N, H)
+    """
+    os.makedirs(save_dir, exist_ok=True)
+
+    t = y_true_abs.reshape(-1)
+    p = y_pred_abs.reshape(-1)
+    t, p = _downsample_xy(t, p, max_points=max_points, seed=0)
+
+    out_path = os.path.join(save_dir, f"{name}_all_horizons.png")
+    _scatter_plot(
+        t, p,
+        title=f"{name} - True vs Predicted (all horizons)",
+        xlabel=f"True {name}",
+        ylabel=f"Predicted {name}",
+        out_path=out_path,
+        show=show
+    )
+    return out_path
+
+def save_scatter_by_step(y_true_abs, y_pred_abs, name, steps=(1, 10, 30), save_dir="plots", max_points=200_000, show=False):
+    """
+    Saves per-step scatters for a signal.
+    steps are 1-indexed horizon steps.
+    """
+    os.makedirs(save_dir, exist_ok=True)
+
+    H = y_true_abs.shape[1]
+    saved = []
+
+    for s in steps:
+        k = s - 1
+        if k < 0 or k >= H:
+            continue
+
+        t = y_true_abs[:, k]
+        p = y_pred_abs[:, k]
+        t, p = _downsample_xy(t, p, max_points=max_points, seed=s)
+
+        out_path = os.path.join(save_dir, f"{name}_step{s:02d}.png")
+        _scatter_plot(
+            t, p,
+            title=f"{name} - True vs Predicted (step {s})",
+            xlabel=f"True {name}",
+            ylabel=f"Predicted {name}",
+            out_path=out_path,
+            show=show
+        )
+        saved.append(out_path)
+
+    return saved
+
+def save_all_signal_plots(yaw_true_abs, yaw_pred_abs,
+                          vel_true_abs, vel_pred_abs,
+                          save_dir="plots", steps=(1, 10, 30),
+                          max_points=200_000, show=False):
+    outputs = []
+
+    # yaw
+    outputs.append(save_scatter_all_horizons(yaw_true_abs, yaw_pred_abs, "yaw", save_dir, max_points, show))
+    outputs += save_scatter_by_step(yaw_true_abs, yaw_pred_abs, "yaw", steps, save_dir, max_points, show)
+
+    # vel
+    outputs.append(save_scatter_all_horizons(vel_true_abs, vel_pred_abs, "vel", save_dir, max_points, show))
+    outputs += save_scatter_by_step(vel_true_abs, vel_pred_abs, "vel", steps, save_dir, max_points, show)
+
+    return outputs
+
+# --- run: saves into ./plots/ ---
+saved_files = save_all_signal_plots(
+    yaw_true_abs, yaw_pred_abs,
+    vel_true_abs, vel_pred_abs,
+    save_dir="plots",
+    steps=(1, 10, 30),
+    max_points=200_000,
+    show=False  # set True if you also want pop-up windows
+)
+
+print("\nSaved plots:")
+for f in saved_files:
+    print(" -", f)
