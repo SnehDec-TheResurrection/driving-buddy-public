@@ -30,10 +30,10 @@ feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "
 trip_ended = False
 last_timestamp = 0
 current_trip_id=0
-inconsistent_speed_instances = 0 
-sudden_braking_instances = 0 
-sharp_turning_instances = 0
-lane_deviation_instances = 0 
+inconsistent_speed_instances = []
+sudden_braking_instances = []
+sharp_turning_instances = []
+lane_deviation_instances = [] 
 
 last_recommendation_time = 0
 dashboard_recommendation_value = ""
@@ -73,13 +73,13 @@ def cooldown(prediction_text):
 def increment_persistent_data(prediction_text):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
     if prediction_text == "Start slowing down early." :
-         sudden_braking_instances += 1
+         sudden_braking_instances.append(pass)
     elif prediction_text == "Be careful before turning.":
-        sharp_turning_instances += 1
+        sharp_turning_instances.append(pass)
     elif prediction_text == "Gradually speed up or slow down early.":
-        inconsistent_speed_instances +=1
+        inconsistent_speed_instances.append(pass)
     elif prediction_text == "Adjust to the left to stay centred in the lane." or prediction_text=="Adjust to the right to stay centred in the lane.":
-        lane_deviation_instances +=1
+        lane_deviation_instances.append(pass)
     else: #if duplicate
         pass
 
@@ -87,8 +87,7 @@ def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
     client = MongoClient(mongo_url)
     db = client["DrivingBuddy"]
-    collection = db["sensordatas"]
-    return collection
+    return db
 
 def set_up_mq():
      url = os.environ.get('CLOUDAMQP_URL')
@@ -208,9 +207,12 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
 connection, channel = set_up_mq()
 #Wait for start of trip and get Trip ID
 message_dyno(channel)
-#Connect to DB and fetch last window_size JSON docs. 
-sensorData = connect_to_DB()
+#Connect to DB and fetch last window_size JSON docs.
+db=connect_to_DB()
+sensorData = db["sensordatas"]
 queue_of_events = fetch_items(sensorData, window_size)
+start_of_trip_timestamp = queue_of_events[0]["timestamp"]
+start_of_trip_location = [queue_of_events[0]["latitude"], queue_of_events[0]["longitude"]]
 # classify real data
 squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
 squished_lane_deviation_direction=squish_into_average(queue_of_events)
@@ -302,7 +304,20 @@ while trip_ended == False:
         trip_ended=True
         break
 # Now create the persistent data object
-    
+persistent_data_doc = {
+        "tripID":current_trip_id,
+        "userID":queue_of_events[-2]["userID"],
+        "start_of_trip_timestamp":start_of_trip_timestamp,
+        "end_of_trip_timestamp":queue_of_events[-2]["timestamp"],
+        "start_of_trip_location": start_of_trip_location,
+        "end_of_trip_location":[queue_of_events[-2]["latitude"], queue_of_events[-2]["longitude"]],
+        "inconsistent_speed": inconsistent_speed_instances,
+        "hard_braking": sudden_braking_instances,
+        "sharp_turning":  sharp_turning_instances,
+        "lane_deviation": lane_deviation_instances
+}
+persistent_data = db["persistent_summary_data"]
+persistent_data.insert_one(persisent_data_doc)
 
 
 
