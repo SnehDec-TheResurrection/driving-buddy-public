@@ -76,28 +76,33 @@ def connect_to_DB():
     collection = db["sensordatas"]
     return collection
 
-def message_dyno():
-    global current_trip_id
-      # 1. Get the shared connection URL
-    url = os.environ.get('CLOUDAMQP_URL')
+def set_up_mq():
+     url = os.environ.get('CLOUDAMQP_URL')
     params = pika.URLParameters(url)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
         
         # 2. "Join" the queue
-        # Note: We 'declare' it again just to be safe. 
-        # If it already exists (from Node), RabbitMQ just says "Yup, I know that one."
     channel.queue_declare(queue='trip_signals', durable=True)
-        
-        # 3. Blocking wait for the Node.js message
-    print("Waiting for Node.js to send 'start_of_trip'...")
-        
-        # This is the "Sentry" loop we discussed
+    channel.queue_declare(queue='predictions', durable=True)    
+    return channel
+
+def send_prediction_to_node(channel, message):
+        # Send the message
+        channel.basic_publish(
+            exchange='',
+            routing_key='predictions',
+            body=str(message))
+    
+def message_dyno(channel):
+    global current_trip_id
+    #blocking loop waiting for start of trip flag from node
     for method_frame, properties, body in channel.consume('trip_signals', auto_ack=True):
         if "start_of_trip" in body.decode():
             print("Signal received! Starting MongoDB fetch...")
             current_trip_id = body.decode().split(',')[1]
-            break # Exit this loop to start your LSTM logic
+            channel.basic_cancel(method_frame.consumer_tag)
+            break # Exit this loop to start the LSTM logic
   
 
 def enqueue(queue, items):
@@ -185,11 +190,23 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
     elif(lane_deviation_direction == "right"):
         return "Adjust to the left to stay centred in the lane."
 
+#Set up the message queue connection
+channel = set_up_mq()
 #Wait for start of trip and get Trip ID
-message_dyno()
+message_dyno(channel)
 #Connect to DB and fetch last window_size JSON docs. 
 sensorData = connect_to_DB()
 queue_of_events = fetch_items(sensorData, window_size)
+# classify real data
+squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+squished_lane_deviation_direction=squish_into_average(queue_of_events)
+verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+                     squished_lane_deviation_direction)
+cooldown(verdict)
+increment_persistent_data(dashboard_recommendation_value)
+if dashboard_recommendation_value == "Gradually speed up or slow down early." or 
+dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or "Adjust to the left to stay centred in the lane.":
+    send_message_to_node(channel, dashboard_recommendation_value)
 # Convert this into a tensor, X_test, to feed into the AI model.
 data = convert_into_tensor(queue_of_events)
 # Normalize data before putting into the model. Define the file path where the scaler is saved
@@ -226,16 +243,6 @@ for i in range(window_size):
         "jerk": 0.0
     }
     AI_pred_list.append(entry)
-# classify real data
-squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-squished_lane_deviation_direction=squish_into_average(queue_of_events)
-verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-                     squished_lane_deviation_direction)
-cooldown(verdict)
-increment_persistent_data(dashboard_recommendation_value)
-if dashboard_recommendation_value == "Gradually speed up or slow down early." or 
-dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or "Adjust to the left to stay centred in the lane.":
-    pass #send a message through the message queue 
 # classify AI predicted data and send to the dashboard display 
 squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
 squished_AI_lane_deviation_direction=squish_into_average(AI_pred_list)
@@ -243,6 +250,7 @@ verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squ
 squished_AI_lane_deviation_direction)
 cooldown(verdict_AI)
 #send the recommendation via message queue
+send_message_to_node(channel, dashboard_recommendation_value)
 while trip_ended == False:
     next_packets = fetch_items(sensorData, stride)
     dequeue(queue_of_events)
