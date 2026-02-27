@@ -39,7 +39,7 @@ def unscale_joint_preds(y_pred_s, scaler_dyaw, scaler_dv):
 
 def reconstruct(y_pred_joint_raw, queue_of_events):
     # reconstruct ABS yaw/vel/accel predictions in original units
-    yaw_pred_abs = queue_of_events[-1]["yaw rate"] + y_pred_joint_raw[:, :, IDX_YAW]
+    yaw_pred_abs = queue_of_events[-1]["yaw_rate"] + y_pred_joint_raw[:, :, IDX_YAW]
     # vel_abs = vel_last + dv_to_last
     vel_pred_abs = queue_of_events[-1]["speed"] + y_pred_joint_raw[:, :, IDX_VEL]
     return yaw_pred_abs, vel_pred_abs
