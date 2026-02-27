@@ -27,6 +27,24 @@ last_recommendation_time = 0
 dashboard_recommendation_value = ""
 COOLDOWN_SECONDS = 5  # Adjusted for seconds (e.g., 5000ms = 5s)
 
+IDX_YAW = 0
+IDX_VEL = 1
+
+def unscale_joint_preds(y_pred_s, scaler_dyaw, scaler_dv):
+    # inverse-transform scaled predictions back to raw target units (still deltas).
+    N, H, _ = y_pred_s.shape
+    y_pred_raw = np.zeros_like(y_pred_s, dtype=np.float32)
+    y_pred_raw[:, :, IDX_YAW]   = scaler_dyaw.inverse_transform(y_pred_s[:, :, IDX_YAW].reshape(-1, 1)).reshape(N, H)
+    y_pred_raw[:, :, IDX_VEL]   = scaler_dv.inverse_transform(  y_pred_s[:, :, IDX_VEL].reshape(-1, 1)).reshape(N, H)
+    return y_pred_raw
+
+def reconstruct(y_pred_joint_raw, queue_of_events):
+    # reconstruct ABS yaw/vel/accel predictions in original units
+    yaw_pred_abs = queue_of_events[-1]["yaw rate"] + y_pred_joint_raw[:, :, IDX_YAW]
+    # vel_abs = vel_last + dv_to_last
+    vel_pred_abs = queue_of_events[-1]["speed"] + y_pred_joint_raw[:, :, IDX_VEL]
+    return yaw_pred_abs, vel_pred_abs
+
 def cooldown(prediction_text):
     global last_recommendation_time, dashboard_recommendation_value
     current_time = time.time()
@@ -174,12 +192,16 @@ queue_of_events = fetch_items(sensorData, window_size)
 # Convert this into a tensor, X_test, to feed into the AI model.
 data = convert_into_tensor(queue_of_events)
 # Normalize data before putting into the model. Define the file path where the scaler is saved
-scaler_filename = 'artifacts\\scalerX.pkl'
+input_scaler_filename = 'artifacts\\scalerX.pkl'
+output_vel_scaler_filename = 'artifacts\\scaler_dv.pkl'
+output_yaw_scaler_filename = 'artifacts\\scaler_dyaw.pkl'
 
 # Load the scaler from the file
-loaded_scaler = joblib.load(scaler_filename)
+loaded_input_scaler = joblib.load(input_scaler_filename)
+loaded_output_vel_scaler = joblib.load(output_vel_scaler_filename)
+loaded_output_yaw_scaler = joblib.load(output_yaw_scaler_filename)
 
-data_scaled = loaded_scaler.transform(data)
+data_scaled = loaded_input_scaler.transform(data)
 
 X_test = np.expand_dims(data_scaled, axis=0)
 #Load the AI model from artifacts
@@ -188,10 +210,9 @@ loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
 # Batch size is 1 because we only have 1 window.
 predictions_queue = loaded_model.predict(X_test, batch_size=1)
 #Scale the predictions_queue
-unscale_joint_preds()
+scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
 # Convert the predictions queue into usable values for vel and yaw
-
-# Scale using the sklearn scaler
+yaw_predicted, vel_predicted = reconstruct(scaled_predictions_queue, queue_of_events)
 # classify real data
 squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
 squished_lane_deviation_direction=squish_into_average(queue_of_events)
@@ -207,7 +228,7 @@ while trip_ended == False:
     dequeue(queue_of_events)
     enqueue(queue_of_events, next_packets)
     data = convert_into_tensor(queue_of_events)
-    data_scaled = loaded_scaler.transform(data)
+    data_scaled = loaded_input_scaler.transform(data)
     X_test = np.expand_dims(data_scaled, axis=0)
     
     if queue_of_events[-1]["trip_ended"]==True:
