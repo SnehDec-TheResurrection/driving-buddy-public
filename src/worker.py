@@ -11,6 +11,19 @@ import time
 import pika
 from datetime import datetime, date, timedelta
 
+#Load the AI model from artifacts
+loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
+
+# Normalize data before putting into the model. Define the file path where the scaler is saved
+input_scaler_filename = 'artifacts\\scalerX.pkl'
+output_vel_scaler_filename = 'artifacts\\scaler_dv.pkl'
+output_yaw_scaler_filename = 'artifacts\\scaler_dyaw.pkl'
+
+# Load the scaler from the file
+loaded_input_scaler = joblib.load(input_scaler_filename)
+loaded_output_vel_scaler = joblib.load(output_vel_scaler_filename)
+loaded_output_yaw_scaler = joblib.load(output_yaw_scaler_filename)
+
 window_size = 30 #editable parameter based on hardware sampling constraints. x Hz * 10 = window_size
 stride = 5
 feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "yaw_rate"]
@@ -58,6 +71,7 @@ def cooldown(prediction_text):
         last_recommendation_time = current_time
         
 def increment_persistent_data(prediction_text):
+    global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
     if prediction_text == "Start slowing down early." :
          sudden_braking_instances += 1
     elif prediction_text == "Be careful before turning.":
@@ -85,7 +99,7 @@ def set_up_mq():
         # 2. "Join" the queue
     channel.queue_declare(queue='trip_signals', durable=True)
     channel.queue_declare(queue='predictions', durable=True)    
-    return channel
+    return connection, channel
 
 def send_prediction_to_node(channel, message):
         # Send the message
@@ -191,7 +205,7 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
         return "Adjust to the left to stay centred in the lane."
 
 #Set up the message queue connection
-channel = set_up_mq()
+connection, channel = set_up_mq()
 #Wait for start of trip and get Trip ID
 message_dyno(channel)
 #Connect to DB and fetch last window_size JSON docs. 
@@ -209,21 +223,10 @@ dashboard_recommendation_value == "Adjust to the right to stay centred in the la
     send_message_to_node(channel, dashboard_recommendation_value)
 # Convert this into a tensor, X_test, to feed into the AI model.
 data = convert_into_tensor(queue_of_events)
-# Normalize data before putting into the model. Define the file path where the scaler is saved
-input_scaler_filename = 'artifacts\\scalerX.pkl'
-output_vel_scaler_filename = 'artifacts\\scaler_dv.pkl'
-output_yaw_scaler_filename = 'artifacts\\scaler_dyaw.pkl'
-
-# Load the scaler from the file
-loaded_input_scaler = joblib.load(input_scaler_filename)
-loaded_output_vel_scaler = joblib.load(output_vel_scaler_filename)
-loaded_output_yaw_scaler = joblib.load(output_yaw_scaler_filename)
 
 data_scaled = loaded_input_scaler.transform(data)
 
 X_test = np.expand_dims(data_scaled, axis=0)
-#Load the AI model from artifacts
-loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
 # Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
 # Batch size is 1 because we only have 1 window.
 predictions_queue = loaded_model.predict(X_test, batch_size=1)
@@ -255,17 +258,51 @@ while trip_ended == False:
     next_packets = fetch_items(sensorData, stride)
     dequeue(queue_of_events)
     enqueue(queue_of_events, next_packets)
+    # classify real data
+    squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+    squished_lane_deviation_direction=squish_into_average(queue_of_events)
+    verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+                         squished_lane_deviation_direction)
+    cooldown(verdict)
+    increment_persistent_data(dashboard_recommendation_value)
+    if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
+        send_message_to_node(channel, dashboard_recommendation_value)
+    # Convert this into a tensor, X_test, to feed into the AI model.
     data = convert_into_tensor(queue_of_events)
     data_scaled = loaded_input_scaler.transform(data)
     X_test = np.expand_dims(data_scaled, axis=0)
-    
+    predictions_queue = loaded_model.predict(X_test, batch_size=1)
+    #Scale the predictions_queue
+    scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
+    # Convert the predictions queue into usable values for vel and yaw
+    yaw_predicted, vel_predicted = reconstruct(scaled_predictions_queue, queue_of_events)
+    # Create list of dictionaries for AI predictions
+    AI_pred_list = []
+    for i in range(window_size):
+        entry = {
+            "speed": float(vel_predicted[i]),
+            "acceleration": float(scaled_predictions_queue[IDX_VEL][i]/0.5),
+            "yaw_rate": float(yaw_predicted[i]), 
+            "acceleration_y": 0.0,
+            "lane_offset_direction": "centre",
+            "jerk": 0.0
+        }
+        AI_pred_list.append(entry)
+    # classify AI predicted data and send to the dashboard display 
+    squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
+    squished_AI_lane_deviation_direction=squish_into_average(AI_pred_list)
+    verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
+    squished_AI_lane_deviation_direction)
+    cooldown(verdict_AI)
+    #send the recommendation via message queue
+    send_message_to_node(channel, dashboard_recommendation_value)
     if queue_of_events[-1]["trip_ended"]==True:
+        channel.close()
+        connection.close()
         trip_ended=True
         break
-    else:
-        pass #add all the code
 # Now create the persistent data object
-
+    
 
 
 
