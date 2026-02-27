@@ -9,6 +9,8 @@ import joblib
 import requests
 import time 
 import pika
+from datetime import datetime, date, timedelta
+import "lstm_model.py"
 
 window_size = 30 #editable parameter based on hardware sampling constraints. x Hz * 10 = window_size
 stride = 5
@@ -20,6 +22,35 @@ inconsistent_speed_instances = 0
 sudden_braking_instances = 0 
 sharp_turning_instances = 0
 lane_deviation_instances = 0 
+
+last_recommendation_time = 0
+dashboard_recommendation_value = ""
+COOLDOWN_SECONDS = 5  # Adjusted for seconds (e.g., 5000ms = 5s)
+
+def cooldown(prediction_text):
+    global last_recommendation_time, dashboard_recommendation_value
+    current_time = time.time()
+    time_difference = current_time - last_recommendation_time
+
+    # Check if it's the same message AND within the cooldown period
+    if prediction_text == dashboard_recommendation_value and time_difference < COOLDOWN_SECONDS:
+        dashboard_recommendation_value = "Duplicate"
+    else:
+        # Update state and trigger recommendation
+        dashboard_recommendation_value = prediction_text
+        last_recommendation_time = current_time
+        
+def increment_persistent_data(prediction_text):
+    if prediction_text == "Start slowing down early." :
+         sudden_braking_instances += 1
+    elif prediction_text == "Be careful before turning.":
+        sharp_turning_instances += 1
+    elif prediction_text == "Gradually speed up or slow down early.":
+        inconsistent_speed_instances +=1
+    elif prediction_text == "Adjust to the left to stay centred in the lane." or prediction_text=="Adjust to the right to stay centred in the lane.":
+        lane_deviation_instances +=1
+    else: #if duplicate
+        pass
 
 def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
@@ -74,8 +105,14 @@ def fetch_items(collection, number_of_items):
         return last_group_of_items
     else:
         time.sleep(0.5)
-
-
+        
+def convert_into_tensor(queue_of_events):
+    data = np.array([
+    [doc[col] for col in ["yaw" ,"speed", "accel_pedal"]]
+    for doc in queue_of_events
+        ])
+    return data
+    
 def squish_into_average(queue_of_events):
     # The parameters that we care about for classification
     speed = 0
@@ -135,10 +172,7 @@ message_dyno()
 sensorData = connect_to_DB()
 queue_of_events = fetch_items(sensorData, window_size)
 # Convert this into a tensor, X_test, to feed into the AI model.
-data = np.array([
-    [doc[col] for col in ["speed" ,"accel_pedal", "yaw_rate"]]
-    for doc in queue_of_events
-])
+data = convert_into_tensor(queue_of_events)
 # Normalize data before putting into the model. Define the file path where the scaler is saved
 scaler_filename = 'artifacts\\scalerX.pkl'
 
@@ -153,26 +187,36 @@ loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
 # Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
 # Batch size is 1 because we only have 1 window.
 predictions_queue = loaded_model.predict(X_test, batch_size=1)
+#Scale the predictions_queue
+unscale_joint_preds()
 # Convert the predictions queue into usable values for vel and yaw
+
 # Scale using the sklearn scaler
 # classify real data
 squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
 squished_lane_deviation_direction=squish_into_average(queue_of_events)
 verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
                      squished_lane_deviation_direction)
-# classify AI predicted data
+cooldown(verdict)
+increment_persistent_data(dashboard_recommendation_value)
+# classify AI predicted data and send to the dashboard display 
+
 # Then, dequeue and then enqueue fetch_item(collection)
 while trip_ended == False:
     next_packets = fetch_items(sensorData, stride)
     dequeue(queue_of_events)
     enqueue(queue_of_events, next_packets)
+    data = convert_into_tensor(queue_of_events)
+    data_scaled = loaded_scaler.transform(data)
+    X_test = np.expand_dims(data_scaled, axis=0)
+    
     if queue_of_events[-1]["trip_ended"]==True:
         trip_ended=True
         break
     else:
         pass #add all the code
-# rinse and repeat the above two steps throughout the drive. 
-# while loop for polling, can check mongoDB document ID of all items to verify if updates are ready to be propagated.
+# Now create the persistent data object
+
 
 
 
