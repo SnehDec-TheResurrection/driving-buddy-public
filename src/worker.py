@@ -139,6 +139,7 @@ def squish_into_average(queue_of_events):
     acceleration_array = []
     acceleration_frequency = 0 # use the queue of events to calculate the number of 0-crossings, use that to find the Hz value.
     jerk = 0 # peak derivative of acceleration between two readings
+    lane_deviation_direction = "centre"
     # take the average of each attribute from feature_columns. By definition, we have a moving average, by using sliding windows.
     #First, sum them up:
     for doc in queue_of_events:
@@ -155,7 +156,8 @@ def squish_into_average(queue_of_events):
         potential_peak_jerk = (acceleration_array[-1] - acceleration_array[-2])/0.5 # 0.5 seconds approximately between each reading.
         if potential_peak_jerk > jerk:
           jerk = potential_peak_jerk
-      lane_deviation_direction = doc["lane_offset_direction"]
+      if (doc["lane_offset"] != 0):
+          lane_deviation_direction = doc["lane_offset_direction"]
 
     # Divide the summed values by window_size after completion of for loop
     speed = speed/window_size
@@ -212,6 +214,18 @@ predictions_queue = loaded_model.predict(X_test, batch_size=1)
 scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
 # Convert the predictions queue into usable values for vel and yaw
 yaw_predicted, vel_predicted = reconstruct(scaled_predictions_queue, queue_of_events)
+# Create list of dictionaries for AI predictions
+AI_pred_list = []
+for i in range(window_size):
+    entry = {
+        "speed": float(vel_predicted[i]),
+        "acceleration": float(scaled_predictions_queue[IDX_VEL][i]/0.5),
+        "yaw_rate": float(yaw_predicted[i]), 
+        "acceleration_y": 0.0,
+        "lane_offset_direction": "centre",
+        "jerk": 0.0
+    }
+    AI_pred_list.append(entry)
 # classify real data
 squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
 squished_lane_deviation_direction=squish_into_average(queue_of_events)
@@ -219,8 +233,16 @@ verdict = classifier(squished_speed, squished_average_acceleration, squished_acc
                      squished_lane_deviation_direction)
 cooldown(verdict)
 increment_persistent_data(dashboard_recommendation_value)
+if dashboard_recommendation_value == "Gradually speed up or slow down early." or 
+dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or "Adjust to the left to stay centred in the lane.":
+    pass #send a message through the message queue 
 # classify AI predicted data and send to the dashboard display 
-# Then, dequeue and then enqueue fetch_item(collection)
+squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
+squished_AI_lane_deviation_direction=squish_into_average(AI_pred_list)
+verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
+squished_AI_lane_deviation_direction)
+cooldown(verdict_AI)
+#send the recommendation via message queue
 while trip_ended == False:
     next_packets = fetch_items(sensorData, stride)
     dequeue(queue_of_events)
