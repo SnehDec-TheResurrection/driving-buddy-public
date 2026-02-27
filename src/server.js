@@ -168,7 +168,7 @@ app.post("/esp32", async (req, res) => {
       tripID: current_tripID,
       timestamp: time_with_date,
       speed: parseFloat(fields[2]),
-      acc_pedal: parseFloat(fields[3]), 
+      accel_pedal: parseFloat(fields[3]), 
       acceleration_x: parseFloat(fields[4]), 
       acceleration_y: parseFloat(fields[5]), 
       acceleration_z: parseFloat(fields[6]), 
