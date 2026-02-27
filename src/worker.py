@@ -205,7 +205,7 @@ verdict = classifier(squished_speed, squished_average_acceleration, squished_acc
 cooldown(verdict)
 increment_persistent_data(dashboard_recommendation_value)
 if dashboard_recommendation_value == "Gradually speed up or slow down early." or 
-dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or "Adjust to the left to stay centred in the lane.":
+dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
     send_message_to_node(channel, dashboard_recommendation_value)
 # Convert this into a tensor, X_test, to feed into the AI model.
 data = convert_into_tensor(queue_of_events)
