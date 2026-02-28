@@ -78,9 +78,9 @@ const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
   ws.on('error', console.error);
   client = ws;
-  ws.on('message', function message(data) {
-     ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
-  });
+  //ws.on('message', function message(data) {
+    // ws.send('recommendation and love letter from Mr. Heroku to Ms. ESP32');
+  //});
   
 });
 
