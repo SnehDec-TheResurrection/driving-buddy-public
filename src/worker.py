@@ -2,6 +2,7 @@ import sys
 import os
 import numpy as np
 import keras as keras
+import tensorflow as tf
 from pymongo import MongoClient
 import sklearn as sk
 import joblib
