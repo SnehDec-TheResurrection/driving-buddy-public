@@ -4,4 +4,5 @@ keras
 numpy
 requests
 pika
+tensorflow-cpu
 
