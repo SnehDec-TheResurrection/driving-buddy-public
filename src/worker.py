@@ -12,7 +12,7 @@ import onnxruntime as ort
 
 #Load the AI model from artifacts using ort
 #loaded_model = keras.saving.load_model(os.path.join("artifacts", "trained_lstm_model.keras")
-onnx_model_path = os.path.join("artifacts", "trained_lstm_model.onnx")
+onnx_model_path = os.path.join("src", "artifacts", "trained_lstm_model.onnx")
 ort_session = ort.InferenceSession(onnx_model_path)
 input_name = ort_session.get_inputs()[0].name
 
