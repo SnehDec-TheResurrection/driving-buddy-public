@@ -141,7 +141,7 @@ def fetch_items(collection, number_of_items):
         last_timestamp = last_group_of_items[-1]['timestamp']
         return last_group_of_items
     else:
-        if datetime.now() - current_timestamp > COOLDOWN_MS:
+        if datetime.now() - current_timestamp > COOLDOWN_SECONDS:
             print("No MongoDB data.")
             return -1 
         time.sleep(0.5)
