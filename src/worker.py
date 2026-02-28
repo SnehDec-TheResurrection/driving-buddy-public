@@ -308,8 +308,6 @@ while trip_ended == False:
     #send the recommendation via message queue
     send_message_to_node(channel, dashboard_recommendation_value)
     if queue_of_events[-1]["trip_ended"]==True:
-        channel.close()
-        connection.close()
         trip_ended=True
         break
 # Now create the persistent data object
@@ -327,6 +325,6 @@ persistent_data_doc = {
 }
 persistent_data = db["persistent_summary_data"]
 persistent_data.insert_one(persistent_data_doc)
-
+message_dyno()
 
 
