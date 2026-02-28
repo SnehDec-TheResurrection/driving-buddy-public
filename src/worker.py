@@ -81,7 +81,7 @@ def connect_to_DB():
     return db
 
 def set_up_mq():
-     url = os.environ.get('CLOUDAMQP_URL')
+    url = os.environ.get('CLOUDAMQP_URL')
     params = pika.URLParameters(url + "?heartbeat=600")
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
@@ -121,6 +121,7 @@ def dequeue(queue):
 
 def fetch_items(collection, number_of_items):
    global last_timestamp
+   current_timestamp = datettime.now()
    while True:
     query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
     # Efficiently check the count without pulling the actual data
@@ -130,6 +131,9 @@ def fetch_items(collection, number_of_items):
         last_timestamp = last_group_of_items[-1]['timestamp']
         return last_group_of_items
     else:
+        if datettime.now() - current_timestamp > COOLDOWN_MS:
+            print("No MongoDB data.")
+            return -1 
         time.sleep(0.5)
         
 def convert_into_tensor(queue_of_events):
@@ -175,27 +179,27 @@ def squish_into_average(queue_of_events):
     yaw_rate = yaw_rate/window_size
     acceleration_y = acceleration_y/window_size
     current_average_timestamp = queue_of_events[window_size//2]["timestamp"] # take from middle of queue
-    current_average_latitude = queue_of_events[window_size//2]["latitude"] # take from middle of queue
-    current_average_longitude = queue_of_events[window_size//2]["longitude"] # take from middle of queue 
+    current_average_gps_latitude = queue_of_events[window_size//2]["gps_latitude"] # take from middle of queue
+    current_average_gps_longitude = queue_of_events[window_size//2]["gps_longitude"] # take from middle of queue 
 
-    return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction, current_average_timestamp, current_average_latitude, current_average_longitude
+    return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction, current_average_timestamp, current_average_gps_latitude, current_average_gps_longitude
 
 
-def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction,current_average_timestamp, current_average_latitude, current_average_longitude):
+def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction,current_average_timestamp, current_average_gps_latitude, current_average_gps_longitude):
     #Sudden Braking
     if abs(average_acceleration) > 3.0:
-        return f"Start slowing down early,{current_average_timestamp},{current_average_latitude},{current_average_longitude}" 
+        return f"Start slowing down early,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     #Sharp Turning
     if abs(acceleration_y) > 3.7 or abs(yaw_rate*speed) > 3.7:
-        return f"Be careful before turning,{current_average_timestamp},{current_average_latitude},{current_average_longitude}"
+        return f"Be careful before turning,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}"
     #Inconsistent Acceleration
     if (jerk > 4 and acceleration_frequency < 0.3) or jerk > 9:
-        return f"Gradually speed up or slow down early,{current_average_timestamp},{current_average_latitude},{current_average_longitude}" 
+        return f"Gradually speed up or slow down early,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     # Lane deviation
     if(lane_deviation_direction == "left"):
-        return f"Adjust to the right to stay centred in the lane,{current_average_timestamp},{current_average_latitude},{current_average_longitude}" 
+        return f"Adjust to the right to stay centred in the lane,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     elif(lane_deviation_direction == "right"):
-        return f"Adjust to the left to stay centred in the lane,{current_average_timestamp},{current_average_latitude},{current_average_longitude}" 
+        return f"Adjust to the left to stay centred in the lane,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
 
 #Set up the message queue connection
 connection, channel = set_up_mq()
@@ -221,12 +225,12 @@ while True:
     sensorData = db["sensordatas"]
     queue_of_events = fetch_items(sensorData, window_size)
     start_of_trip_timestamp = queue_of_events[0]["timestamp"]
-    start_of_trip_location = [queue_of_events[0]["latitude"], queue_of_events[0]["longitude"]]
+    start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
     # classify real data
     squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-    squished_lane_deviation_direction, squished_timestamp, squished_latitude, squished_longitude=squish_into_average(queue_of_events)
+    squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
     verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-                         squished_lane_deviation_direction, squished_timestamp, squished_latitude, squished_longitude)
+                         squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
     cooldown(verdict)
     increment_persistent_data(dashboard_recommendation_value)
     if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
@@ -307,8 +311,8 @@ while True:
                 "lane_offset":0,
                 "lane_offset_direction": "centre",
                 "timestamp": queue_of_events[-1]["timestamp"], 
-                "latitude": queue_of_events[-1]["latitude"],
-                "longitude": queue_of_events[-1]["longitude"],
+                "gps_latitude": queue_of_events[-1]["gps_latitude"],
+                "gps_longitude": queue_of_events[-1]["gps_longitude"],
                 "jerk": 0.0
             }
             AI_pred_list.append(entry)
@@ -330,7 +334,7 @@ while True:
             "start_of_trip_timestamp":start_of_trip_timestamp,
             "end_of_trip_timestamp":queue_of_events[-2]["timestamp"],
             "start_of_trip_location": start_of_trip_location,
-            "end_of_trip_location":[queue_of_events[-2]["latitude"], queue_of_events[-2]["longitude"]],
+            "end_of_trip_location":[queue_of_events[-2]["gps_latitude"], queue_of_events[-2]["gps_longitude"]],
             "inconsistent_speed": inconsistent_speed_instances,
             "hard_braking": sudden_braking_instances,
             "sharp_turning":  sharp_turning_instances,
