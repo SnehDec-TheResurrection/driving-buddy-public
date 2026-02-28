@@ -18,9 +18,9 @@ input_name = ort_session.get_inputs()[0].name
 
 
 # Normalize data before putting into the model. Define the file path where the scaler is saved
-input_scaler_filename = os.path.join("artifacts","scalerX.pkl")
-output_vel_scaler_filename = os.path.join("artifacts", "scaler_dv.pkl")
-output_yaw_scaler_filename = os.path.join("artifacts", "scaler_dyaw.pkl")
+input_scaler_filename = os.path.join("src", "artifacts","scalerX.pkl")
+output_vel_scaler_filename = os.path.join("src", "artifacts", "scaler_dv.pkl")
+output_yaw_scaler_filename = os.path.join("src", "artifacts", "scaler_dyaw.pkl")
 
 # Load the scaler from the file
 loaded_input_scaler = joblib.load(input_scaler_filename)
