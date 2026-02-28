@@ -72,6 +72,7 @@ async function connectMQ() {
 }
 
 await connectMQ();
+console.log("MQ connected");
 
 const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
