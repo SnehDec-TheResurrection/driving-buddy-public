@@ -57,7 +57,7 @@ async function connectMQ() {
         // 4. SET UP THE LISTENER (Lane: Python -> Node)
         // This runs automatically whenever the Python worker sends text back
         amqpChannel.consume('predictions', (msg) => {
-            prediction_text = msg.content.toString;
+            prediction_text = msg.content.toString();
             if (prediction_text !== null) {
                 dashboard_recommendation_value =prediction_text ;
                 on_rec(dashboard_recommendation_value);
