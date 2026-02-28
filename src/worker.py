@@ -31,7 +31,8 @@ window_size = 30 #editable parameter based on hardware sampling constraints. x H
 stride = 5
 feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "yaw_rate"]
 
-COOLDOWN_SECONDS = 5  # Adjusted for seconds (e.g., 5000ms = 5s)
+COOLDOWN = 5 # Adjusted for seconds (e.g., 5000ms = 5s)
+COOLDOWN_SECONDS = timedelta(seconds=COOLDOWN_SECONDS)  
 
 IDX_YAW = 0
 IDX_VEL = 1
