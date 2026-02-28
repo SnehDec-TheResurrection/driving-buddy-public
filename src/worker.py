@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-import tensorflow as tf
 import keras as keras
 from pymongo import MongoClient
 import sklearn as sk
