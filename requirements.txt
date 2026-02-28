@@ -4,5 +4,5 @@ numpy
 requests
 pika
 onnxruntime
-scikit-learn
+scikit-learn==1.6.1
 
