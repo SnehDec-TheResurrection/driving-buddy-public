@@ -57,8 +57,9 @@ async function connectMQ() {
         // 4. SET UP THE LISTENER (Lane: Python -> Node)
         // This runs automatically whenever the Python worker sends text back
         amqpChannel.consume('predictions', (msg) => {
-            if (msg !== null) {
-                dashboard_recommendation_value = msg;
+            prediction_text = msg.content.toString;
+            if (prediction_text !== null) {
+                dashboard_recommendation_value =prediction_text ;
                 on_rec(dashboard_recommendation_value);
                 amqpChannel.ack(msg); // Confirms receipt to the broker
             }
@@ -70,7 +71,7 @@ async function connectMQ() {
     }
 }
 
-connectMQ();
+await connectMQ();
 
 const wss = new WebSocketServer({ server, path:'/websocky' });
 wss.on('connection', function connection(ws) {
@@ -131,7 +132,7 @@ app.post("/esp32", async (req, res) => {
     else if (csv_data === "end_of_trip"){
       end_trip ="Thank you for driving!";
       trip_ended = true;
-      csv_data = "00:12:00,1,2,3,4,5,right";
+      csv_data = "37,00:12:00,1,2,3,4,5,6,8,9,right";
     }
     
     const fields = csv_data.split(",");
