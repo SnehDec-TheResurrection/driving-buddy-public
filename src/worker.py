@@ -186,7 +186,7 @@ def squish_into_average(queue_of_events):
     # Divide the summed values by window_size after completion of for loop
     speed = speed/window_size
     average_acceleration = average_acceleration/window_size
-    acceleration_frequency = acceleration_frequency/10 #10 seconds
+    acceleration_frequency = acceleration_frequency/15 #10 seconds
     yaw_rate = yaw_rate/window_size
     acceleration_y = acceleration_y/window_size
     current_average_timestamp = queue_of_events[window_size//2]["timestamp"] # take from middle of queue
