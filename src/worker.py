@@ -248,7 +248,7 @@ for i in range(window_size):
     prev_v = float(vel_predicted[0][i-1]) if i > 0 else queue_of_events[-1]["speed"]
     entry = {
         "speed": float(vel_predicted[0][i]),
-        "acceleration_x": float(curr_v-prev_v/0.5),
+        "acceleration_x": float((curr_v-prev_v)/0.5),
         "yaw_rate": float(yaw_predicted[0][i]), 
         "acceleration_y": 0.0,
         "lane_offset": 0,
@@ -296,7 +296,7 @@ while trip_ended == False:
         
         entry = {
             "speed": float(vel_predicted[0][i]),
-            "acceleration_x": float(curr_v-prev_v/0.5),
+            "acceleration_x": float((curr_v-prev_v)/0.5),
             "yaw_rate": float(yaw_predicted[0][i]), 
             "acceleration_y": 0.0,
             "lane_offset":0,
