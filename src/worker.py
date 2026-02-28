@@ -12,12 +12,12 @@ import pika
 from datetime import datetime, date, timedelta
 
 #Load the AI model from artifacts
-loaded_model = keras.saving.load_model("artifacts/trained_lstm_model.keras")
+loaded_model = keras.saving.load_model(os.path.join("artifacts", "trained_lstm_model.keras")
 
 # Normalize data before putting into the model. Define the file path where the scaler is saved
-input_scaler_filename = 'artifacts\\scalerX.pkl'
-output_vel_scaler_filename = 'artifacts\\scaler_dv.pkl'
-output_yaw_scaler_filename = 'artifacts\\scaler_dyaw.pkl'
+input_scaler_filename = os.path.join("artifacts","scalerX.pkl")
+output_vel_scaler_filename = os.path.join("artifacts", "scaler_dv.pkl")
+output_yaw_scaler_filename = os.path.join("artifacts", "scaler_dyaw.pkl")
 
 # Load the scaler from the file
 loaded_input_scaler = joblib.load(input_scaler_filename)
@@ -121,7 +121,7 @@ def dequeue(queue):
 
 def fetch_items(collection, number_of_items):
    global last_timestamp
-   current_timestamp = datettime.now()
+   current_timestamp = datetime.now()
    while True:
     query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
     # Efficiently check the count without pulling the actual data
@@ -131,7 +131,7 @@ def fetch_items(collection, number_of_items):
         last_timestamp = last_group_of_items[-1]['timestamp']
         return last_group_of_items
     else:
-        if datettime.now() - current_timestamp > COOLDOWN_MS:
+        if datetime.now() - current_timestamp > COOLDOWN_MS:
             print("No MongoDB data.")
             return -1 
         time.sleep(0.5)
