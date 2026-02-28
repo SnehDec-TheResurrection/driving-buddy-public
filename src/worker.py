@@ -1,8 +1,6 @@
 import sys
 import os
 import numpy as np
-import keras as keras
-import tensorflow as tf
 from pymongo import MongoClient
 import sklearn as sk
 import joblib
@@ -10,9 +8,14 @@ import requests
 import time 
 import pika
 from datetime import datetime, date, timedelta
+import onnxruntime as ort
 
-#Load the AI model from artifacts
-loaded_model = keras.saving.load_model(os.path.join("artifacts", "trained_lstm_model.keras")
+#Load the AI model from artifacts using ort
+#loaded_model = keras.saving.load_model(os.path.join("artifacts", "trained_lstm_model.keras")
+onnx_model_path = os.path.join("artifacts", "model.onnx")
+ort_session = ort.InferenceSession(onnx_model_path)
+input_name = ort_session.get_inputs()[0].name
+
 
 # Normalize data before putting into the model. Define the file path where the scaler is saved
 input_scaler_filename = os.path.join("artifacts","scalerX.pkl")
@@ -32,6 +35,13 @@ COOLDOWN_SECONDS = 5  # Adjusted for seconds (e.g., 5000ms = 5s)
 
 IDX_YAW = 0
 IDX_VEL = 1
+
+def predict_with_onnx(X_test_scaled):
+    """Replaces loaded_model.predict()"""
+    # Ensure data is float32 for ONNX
+    onnx_inputs = {input_name: X_test_scaled.astype(np.float32)}
+    onnx_output = ort_session.run(None, onnx_inputs)
+    return onnx_output[0]
 
 def unscale_joint_preds(y_pred_s, scaler_dyaw, scaler_dv):
     # inverse-transform scaled predictions back to raw target units (still deltas).
@@ -224,6 +234,8 @@ while True:
     message_dyno(channel)
     sensorData = db["sensordatas"]
     queue_of_events = fetch_items(sensorData, window_size)
+    if queue_of_events == -1:
+        sys.exit(-1)
     start_of_trip_timestamp = queue_of_events[0]["timestamp"]
     start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
     # classify real data
@@ -243,7 +255,7 @@ while True:
     X_test = np.expand_dims(data_scaled, axis=0)
     # Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
     # Batch size is 1 because we only have 1 window.
-    predictions_queue = loaded_model.predict(X_test, batch_size=1)
+    predictions_queue = predict_with_onnx(X_test)
     #Scale the predictions_queue
     scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
     # Convert the predictions queue into usable values for vel and yaw
@@ -275,6 +287,8 @@ while True:
     send_message_to_node(channel, dashboard_recommendation_value)
     while trip_ended == False:
         next_packets = fetch_items(sensorData, stride)
+        if next_packets == -1:
+            sys.exit(-1)
         dequeue(queue_of_events)
         enqueue(queue_of_events, next_packets)
         # classify real data
@@ -290,7 +304,7 @@ while True:
         data = convert_into_tensor(queue_of_events)
         data_scaled = loaded_input_scaler.transform(data)
         X_test = np.expand_dims(data_scaled, axis=0)
-        predictions_queue = loaded_model.predict(X_test, batch_size=1)
+        predictions_queue = predict_with_onnx(X_test)
         #Scale the predictions_queue
         scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
         # Convert the predictions queue into usable values for vel and yaw
