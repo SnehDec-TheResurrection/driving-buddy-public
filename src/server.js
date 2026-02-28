@@ -85,7 +85,9 @@ wss.on('connection', function connection(ws) {
 });
 
   dashboard_recommendation.on("new_recommendation", (newRecValue) => {
+      if(client != null && client.readyState === 1){
         client.send(newRecValue);
+      }
     });
   
 server.listen((config.port || 3000), () => {
