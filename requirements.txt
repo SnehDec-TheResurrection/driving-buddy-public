@@ -1,8 +1,7 @@
 pandas==3.0.0
 pymongo==4.16.0
-keras 
 numpy
 requests
 pika
-tensorflow-cpu
+onnxruntime
 
