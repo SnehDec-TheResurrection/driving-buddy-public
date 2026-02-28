@@ -244,9 +244,9 @@ yaw_predicted, vel_predicted = reconstruct(scaled_predictions_queue, queue_of_ev
 AI_pred_list = []
 for i in range(window_size):
     entry = {
-        "speed": float(vel_predicted[i]),
-        "acceleration_x": float(scaled_predictions_queue[IDX_VEL][i]/0.5),
-        "yaw_rate": float(yaw_predicted[i]), 
+        "speed": float(vel_predicted[0][i]),
+        "acceleration_x": float(scaled_predictions_queue[0][i][IDX_VEL]/0.5),
+        "yaw_rate": float(yaw_predicted[0][i]), 
         "acceleration_y": 0.0,
         "lane_offset": 0,
         "lane_offset_direction": "centre",
@@ -287,9 +287,9 @@ while trip_ended == False:
     AI_pred_list = []
     for i in range(window_size):
         entry = {
-            "speed": float(vel_predicted[i]),
-            "acceleration_x": float(scaled_predictions_queue[IDX_VEL][i]/0.5),
-            "yaw_rate": float(yaw_predicted[i]), 
+            "speed": float(vel_predicted[0][i]),
+            "acceleration_x": float(scaled_predictions_queue[0][i][IDX_VEL]/0.5),
+            "yaw_rate": float(yaw_predicted[0][i]), 
             "acceleration_y": 0.0,
             "lane_offset":0,
             "lane_offset_direction": "centre",
