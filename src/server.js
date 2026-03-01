@@ -137,6 +137,16 @@ app.post("/esp32", async (req, res) => {
       trip_ended = true;
       csv_data = "37,00:12:00,1,2,3,4,5,6,8,9, 10, right";
     }
+
+    if (tripID === null){
+        end_trip = "";
+      trip_ended = false;
+      const now = new Date();
+      current_tripID = formatTimestamp(now);
+      amqpChannel.sendToQueue('trip_signals', Buffer.from(`start_of_trip,${current_tripID}`), {
+        persistent: true 
+});
+    }
     
     const fields = csv_data.split(",");
     //if (fields.length < 7) throw new Error("Invalid CSV");
