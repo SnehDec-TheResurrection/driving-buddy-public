@@ -112,7 +112,7 @@ def send_message_to_node(channel, message):
 def message_dyno(channel):
     global current_trip_id
     #blocking loop waiting for start of trip flag from node
-    for method_frame, properties, body in channel.consume('trip_signals', auto_ack=True):
+    for method_frame, properties, body in channel.consume('trip_signals'):
         if "start_of_trip" in body.decode():
             print(body.decode())
             print("Signal received! Starting MongoDB fetch...")
