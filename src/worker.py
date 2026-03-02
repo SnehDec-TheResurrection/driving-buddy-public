@@ -58,18 +58,19 @@ def reconstruct(y_pred_joint_raw, queue_of_events):
     vel_pred_abs = queue_of_events[-1]["speed"] + y_pred_joint_raw[:, :, IDX_VEL]
     return yaw_pred_abs, vel_pred_abs
 
-def cooldown(prediction_text):
-    global last_recommendation_time, dashboard_recommendation_value
-    current_time = time.time()
+def cooldown(prediction_text, rec_string):
+    global last_recommendation_time
+    current_time = datetime.now()
     time_difference = current_time - last_recommendation_time
 
     # Check if it's the same message AND within the cooldown period
-    if prediction_text.split(",")[0] == dashboard_recommendation_value and time_difference < COOLDOWN_SECONDS:
-        dashboard_recommendation_value = "Duplicate"
+    if prediction_text.split(",")[0] == rec_string and time_difference < COOLDOWN_SECONDS:
+        rec_string = "Duplicate"
     else:
         # Update state and trigger recommendation
-        dashboard_recommendation_value = prediction_text.split(",")[0]
+        rec_string = prediction_text.split(",")[0]
         last_recommendation_time = current_time
+    return rec_string
         
 def increment_persistent_data(prediction_text):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
@@ -144,8 +145,8 @@ def fetch_items(collection, number_of_items):
         return last_group_of_items
     else:
         if datetime.now() - current_timestamp > COOLDOWN_SECONDS:
-            print("No MongoDB data.")
-            return -1 
+            print("No MongoDB data. Trip ended or disconnected.")
+            return -1
         time.sleep(0.5)
         
 def convert_into_tensor(queue_of_events):
@@ -190,9 +191,9 @@ def squish_into_average(queue_of_events):
     acceleration_frequency = acceleration_frequency/15 #10 seconds
     yaw_rate = yaw_rate/window_size
     acceleration_y = acceleration_y/window_size
-    current_average_timestamp = queue_of_events[window_size//2]["timestamp"] # take from middle of queue
-    current_average_gps_latitude = queue_of_events[window_size//2]["gps_latitude"] # take from middle of queue
-    current_average_gps_longitude = queue_of_events[window_size//2]["gps_longitude"] # take from middle of queue 
+    current_average_timestamp = str(queue_of_events[window_size//2]["timestamp"]) # take from middle of queue
+    current_average_gps_latitude = str(queue_of_events[window_size//2]["gps_latitude"]) # take from middle of queue
+    current_average_gps_longitude = str(queue_of_events[window_size//2]["gps_longitude"]) # take from middle of queue 
 
     return speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction, current_average_timestamp, current_average_gps_latitude, current_average_gps_longitude
 
@@ -229,68 +230,71 @@ while True:
     lane_deviation_instances = [] 
     
     
-    last_recommendation_time = 0
+    last_recommendation_time = datetime.now()
     dashboard_recommendation_value = ""
+    dashboard_recommendation_value_AI = ""
     
     #Wait for start of trip and get Trip ID
     message_dyno(channel)
     sensorData = db["sensordatas"]
     queue_of_events = fetch_items(sensorData, window_size)
     if queue_of_events == -1:
-        sys.exit(-1)
+        trip_ended = True
     start_of_trip_timestamp = queue_of_events[0]["timestamp"]
     start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
-    # classify real data
-    squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-    squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
-    verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-                         squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
-    cooldown(verdict)
-    increment_persistent_data(dashboard_recommendation_value)
-    if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
-        send_message_to_node(channel, dashboard_recommendation_value)
-    # Convert this into a tensor, X_test, to feed into the AI model.
-    data = convert_into_tensor(queue_of_events)
-    
-    data_scaled = loaded_input_scaler.transform(data)
-    
-    X_test = np.expand_dims(data_scaled, axis=0)
-    # Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
-    # Batch size is 1 because we only have 1 window.
-    predictions_queue = predict_with_onnx(X_test)
-    #Scale the predictions_queue
-    scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
-    # Convert the predictions queue into usable values for vel and yaw
-    yaw_predicted, vel_predicted = reconstruct(scaled_predictions_queue, queue_of_events)
-    # Create list of dictionaries for AI predictions
-    AI_pred_list = []
-    for i in range(window_size):
-        # Get velocity of THIS step
-        curr_v = float(vel_predicted[0][i])
-        # Get velocity of PREVIOUS step (or the last real speed if i=0)
-        prev_v = float(vel_predicted[0][i-1]) if i > 0 else queue_of_events[-1]["speed"]
-        entry = {
-            "speed": float(vel_predicted[0][i]),
-            "acceleration_x": float((curr_v-prev_v)/0.5),
-            "yaw_rate": float(yaw_predicted[0][i]), 
-            "acceleration_y": 0.0,
-            "lane_offset": 0,
-            "lane_offset_direction": "centre",
-            "jerk": 0.0
-        }
-        AI_pred_list.append(entry)
-    # classify AI predicted data and send to the dashboard display 
-    squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
-    squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
-    verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
-    squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
-    cooldown(verdict_AI)
-    #send the recommendation via message queue
-    send_message_to_node(channel, dashboard_recommendation_value)
+    if trip_ended == False:
+        # classify real data
+        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+        squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
+        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
+                             squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
+        dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
+        increment_persistent_data(dashboard_recommendation_value)
+        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
+            send_message_to_node(channel, dashboard_recommendation_value)
+        # Convert this into a tensor, X_test, to feed into the AI model.
+        data = convert_into_tensor(queue_of_events)
+        
+        data_scaled = loaded_input_scaler.transform(data)
+        
+        X_test = np.expand_dims(data_scaled, axis=0)
+        # Put X_test tensor into the AI model and receive the predicted_events queue. Add batch_size as a dimension to make it 3D, matches the X_train and y_train.
+        # Batch size is 1 because we only have 1 window.
+        predictions_queue = predict_with_onnx(X_test)
+        #Scale the predictions_queue
+        scaled_predictions_queue = unscale_joint_preds(predictions_queue, loaded_output_yaw_scaler, loaded_output_vel_scaler)
+        # Convert the predictions queue into usable values for vel and yaw
+        yaw_predicted, vel_predicted = reconstruct(scaled_predictions_queue, queue_of_events)
+        # Create list of dictionaries for AI predictions
+        AI_pred_list = []
+        for i in range(window_size):
+            # Get velocity of THIS step
+            curr_v = float(vel_predicted[0][i])
+            # Get velocity of PREVIOUS step (or the last real speed if i=0)
+            prev_v = float(vel_predicted[0][i-1]) if i > 0 else queue_of_events[-1]["speed"]
+            entry = {
+                "speed": float(vel_predicted[0][i]),
+                "acceleration_x": float((curr_v-prev_v)/0.5),
+                "yaw_rate": float(yaw_predicted[0][i]), 
+                "acceleration_y": 0.0,
+                "lane_offset": 0,
+                "lane_offset_direction": "centre",
+                "jerk": 0.0
+            }
+            AI_pred_list.append(entry)
+        # classify AI predicted data and send to the dashboard display 
+        squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
+        squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
+        verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
+        squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
+        dashboard_recommendation_value_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI)
+         if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
+            #send the recommendation via message queue
+            send_message_to_node(channel, dashboard_recommendation_value_AI)
     while trip_ended == False:
         next_packets = fetch_items(sensorData, stride)
         if next_packets == -1:
-            sys.exit(-1)
+            break
         dequeue(queue_of_events)
         enqueue(queue_of_events, next_packets)
         # classify real data
@@ -298,7 +302,7 @@ while True:
         squished_lane_deviation_direction, squished_time, squished_lat, squished_long=squish_into_average(queue_of_events)
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
                              squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
-        cooldown(verdict)
+        dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
         increment_persistent_data(dashboard_recommendation_value)
         if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
             send_message_to_node(channel, dashboard_recommendation_value)
@@ -337,27 +341,27 @@ while True:
         squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
         squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
-        cooldown(verdict_AI)
-        #send the recommendation via message queue
-        send_message_to_node(channel, dashboard_recommendation_value)
+        dashboard_recommendation_value_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI)
+        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
+            #send the recommendation via message queue
+            send_message_to_node(channel, dashboard_recommendation_value_AI)
         if queue_of_events[-1]["trip_ended"]==True:
             trip_ended=True
             break
-    # Now create the persistent data object
-    persistent_data_doc = {
-            "tripID":current_trip_id,
-            "userID":queue_of_events[-2]["userID"],
-            "start_of_trip_timestamp":start_of_trip_timestamp,
-            "end_of_trip_timestamp":queue_of_events[-2]["timestamp"],
-            "start_of_trip_location": start_of_trip_location,
-            "end_of_trip_location":[queue_of_events[-2]["gps_latitude"], queue_of_events[-2]["gps_longitude"]],
-            "inconsistent_speed": inconsistent_speed_instances,
-            "hard_braking": sudden_braking_instances,
-            "sharp_turning":  sharp_turning_instances,
-            "lane_deviation": lane_deviation_instances
-    }
-    persistent_data = db["persistent_summary_data"]
-    persistent_data.insert_one(persistent_data_doc)
-    
-    
-    
+    if len(queue_of_events) > 1:
+        # Now create the persistent data object
+        persistent_data_doc = {
+                "tripID":current_trip_id,
+                "userID":queue_of_events[-1]["userID"],
+                "start_of_trip_timestamp":start_of_trip_timestamp,
+                "end_of_trip_timestamp":queue_of_events[-1]["timestamp"],
+                "start_of_trip_location": start_of_trip_location,
+                "end_of_trip_location":[queue_of_events[-1]["gps_latitude"], queue_of_events[-1]["gps_longitude"]],
+                "inconsistent_speed": inconsistent_speed_instances,
+                "hard_braking": sudden_braking_instances,
+                "sharp_turning":  sharp_turning_instances,
+                "lane_deviation": lane_deviation_instances
+        }
+        persistent_data = db["persistent_summary_data"]
+        persistent_data.insert_one(persistent_data_doc)
+        
