@@ -94,7 +94,7 @@ def connect_to_DB():
 
 def set_up_mq():
     url = os.environ.get('CLOUDAMQP_URL')
-    params = pika.URLParameters(url + "?heartbeat=600")
+    params = pika.URLParameters(url)
     connection = pika.BlockingConnection(params)
     channel = connection.channel()
         
@@ -115,12 +115,12 @@ def message_dyno(channel):
     #blocking loop waiting for start of trip flag from node
     for method_frame, properties, body in channel.consume('trip_signals'):
         if "start_of_trip" in body.decode():
+            channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             print(body.decode())
             print("Signal received! Starting MongoDB fetch...")
             current_trip_id = body.decode().split(',')[1]
             channel.basic_cancel(method_frame.consumer_tag)
             break # Exit this loop to start the LSTM logic
-  
 
 def enqueue(queue, items):
     for item in items:
