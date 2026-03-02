@@ -114,13 +114,13 @@ def message_dyno(channel):
     global current_trip_id
     while True:
          method_frame, header_frame, body = channel.basic_get(queue='trip_signals', auto_ack=False)
-        if body and "start_of_trip" in body.decode():
+         if body and "start_of_trip" in body.decode():
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             print(body.decode())
             print("Signal received! Starting MongoDB fetch...")
             current_trip_id = body.decode().split(',')[1]
             break # Exit this loop tc begin ride processing
-        else:
+         else:
             time.sleep(0.5)
             
 def enqueue(queue, items):
