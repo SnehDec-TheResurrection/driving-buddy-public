@@ -240,9 +240,9 @@ while True:
     queue_of_events = fetch_items(sensorData, window_size)
     if queue_of_events == -1:
         trip_ended = True
-    start_of_trip_timestamp = queue_of_events[0]["timestamp"]
-    start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
     if trip_ended == False:
+        start_of_trip_timestamp = queue_of_events[0]["timestamp"]
+        start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
         # classify real data
         squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
         squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
