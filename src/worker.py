@@ -288,7 +288,7 @@ while True:
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
         squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI)
-         if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
+        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
             #send the recommendation via message queue
             send_message_to_node(channel, dashboard_recommendation_value_AI)
     while trip_ended == False:
