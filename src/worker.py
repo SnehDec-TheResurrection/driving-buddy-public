@@ -136,7 +136,7 @@ def dequeue(queue):
 
 def fetch_items(collection, number_of_items):
    global last_timestamp, current_trip_id
-   current_timestamp = datetime.now()
+   current_timestamp = datetime.now() 
    while True:
     query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
     print(last_timestamp)
@@ -225,7 +225,7 @@ db=connect_to_DB()
 while True:
 
     trip_ended = False
-    last_timestamp = datetime.now()
+    last_timestamp = datetime.now() - timedelta(hours=5)
     current_trip_id=0
     inconsistent_speed_instances = []
     sudden_braking_instances = []
