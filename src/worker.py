@@ -200,7 +200,7 @@ def squish_into_average(queue_of_events):
 
 def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction,current_average_timestamp, current_average_gps_latitude, current_average_gps_longitude):
     #Sudden Braking
-    if abs(average_acceleration) > 3.0:
+    if abs(average_acceleration) > 1.0:
         return f"Start slowing down early.,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     #Sharp Turning
     if abs(acceleration_y) > 3.7 or abs(yaw_rate*speed) > 3.7:
