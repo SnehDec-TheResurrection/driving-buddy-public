@@ -209,7 +209,7 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
     if abs(average_acceleration) > 1.0:
         return f"Start slowing down early.,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     #Sharp Turning
-    if abs(acceleration_y) > 3.7 or abs(yaw_rate*speed) > 3.7:
+    if abs(acceleration_y) > 3.7 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 3.7:
         return f"Be careful before turning.,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}"
     #Inconsistent Acceleration
     if (jerk > 4 and acceleration_frequency < 0.3) or jerk > 9:
@@ -249,12 +249,14 @@ while True:
     if trip_ended == False:
         start_of_trip_timestamp = queue_of_events[0]["timestamp"]
         start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
+        print(start_of_trip_location)
         # classify real data
         squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
         squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
                              squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
         dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
+        print(dashboard_recommendation_value)
         increment_persistent_data(dashboard_recommendation_value)
         if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
             send_message_to_node(channel, dashboard_recommendation_value)
@@ -355,6 +357,7 @@ while True:
             trip_ended=True
             break
     if queue_of_events != -1:
+        print(queue_of_events)
         # Now create the persistent data object
         persistent_data_doc = {
                 "tripID":current_trip_id,
