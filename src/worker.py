@@ -119,6 +119,7 @@ def message_dyno(channel):
             print(body.decode())
             print("Signal received! Starting MongoDB fetch...")
             current_trip_id = body.decode().split(',')[1]
+            print(current_trip_id)
             break # Exit this loop tc begin ride processing
          else:
             time.sleep(0.5)
@@ -134,10 +135,11 @@ def dequeue(queue):
 
 
 def fetch_items(collection, number_of_items):
-   global last_timestamp
+   global last_timestamp, current_trip_id
    current_timestamp = datetime.now()
    while True:
     query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
+    print(query)
     # Efficiently check the count without pulling the actual data
     if collection.count_documents(query) >= number_of_items:
         # Now that we know 30+ or 5+ exist, fetch them
