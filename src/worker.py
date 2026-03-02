@@ -348,7 +348,7 @@ while True:
         if queue_of_events[-1]["trip_ended"]==True:
             trip_ended=True
             break
-    if len(queue_of_events) > 1:
+    if queue_of_events != -1:
         # Now create the persistent data object
         persistent_data_doc = {
                 "tripID":current_trip_id,
