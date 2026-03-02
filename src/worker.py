@@ -112,16 +112,17 @@ def send_message_to_node(channel, message):
     
 def message_dyno(channel):
     global current_trip_id
-    #blocking loop waiting for start of trip flag from node
-    for method_frame, properties, body in channel.consume('trip_signals'):
-        if "start_of_trip" in body.decode():
+    while True:
+         method_frame, header_frame, body = channel.basic_get(queue='trip_signals', auto_ack=False)
+        if body and "start_of_trip" in body.decode():
             channel.basic_ack(delivery_tag=method_frame.delivery_tag)
             print(body.decode())
             print("Signal received! Starting MongoDB fetch...")
             current_trip_id = body.decode().split(',')[1]
-            channel.basic_cancel(method_frame.consumer_tag)
-            break # Exit this loop to start the LSTM logic
-
+            break # Exit this loop tc begin ride processing
+        else:
+            time.sleep(0.5)
+            
 def enqueue(queue, items):
     for item in items:
         queue.append(item)
