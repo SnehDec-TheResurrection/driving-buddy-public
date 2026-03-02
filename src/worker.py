@@ -139,7 +139,7 @@ def fetch_items(collection, number_of_items):
    current_timestamp = datetime.now()
    while True:
     query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
-    print(query)
+    print(last_timestamp)
     # Efficiently check the count without pulling the actual data
     if collection.count_documents(query) >= number_of_items:
         # Now that we know 30+ or 5+ exist, fetch them
