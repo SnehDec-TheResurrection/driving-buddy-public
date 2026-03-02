@@ -12,8 +12,8 @@ const sensorDataSchema = new mongoose.Schema({
   yaw_rate:{type:Number, required:true},
   gps_latitude:{type:String, required:true},
   gps_longitude:{type:String, required:true},
-  //lane_offset: {type:Number},
-  //lane_offset_direction: {type:String},
+  lane_offset: {type:Number},
+  lane_offset_direction: {type:String},
   trip_ended:{type:Boolean}
 });
 
