@@ -32,6 +32,8 @@ stride = 5
 feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "yaw_rate"]
 
 COOLDOWN = 5 # Adjusted for seconds (e.g., 5000ms = 5s)
+FETCH_COOLDOWN = 25 
+FETCH_SECONDS = timedelta(seconds=FETCH_COOLDOWN)  
 COOLDOWN_SECONDS = timedelta(seconds=COOLDOWN)  
 
 IDX_YAW = 0
