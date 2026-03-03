@@ -139,9 +139,6 @@ def dequeue(queue):
 def fetch_items(collection, number_of_items):
    global last_timestamp, current_trip_id
    current_timestamp = datetime.now() 
-   first_entry = sensorData.find_one({"tripID": current_trip_id}, sort=[("timestamp", 1)])
-   if first_entry:
-       last_timestamp = first_entry["timestamp"] - timedelta(milliseconds=1)
    while True:
     query = {"tripID": current_trip_id, "timestamp": {"$gt": last_timestamp}}
     print(last_timestamp)
