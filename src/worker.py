@@ -228,7 +228,7 @@ db=connect_to_DB()
 while True:
 
     trip_ended = False
-    last_timestamp = datetime.now() - timedelta(hours=5) - timedelta(seconds=10)
+    last_timestamp = datetime.now() - timedelta(hours=6)
     current_trip_id=0
     inconsistent_speed_instances = []
     sudden_braking_instances = []
