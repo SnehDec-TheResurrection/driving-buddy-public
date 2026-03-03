@@ -153,7 +153,7 @@ def fetch_items(collection, number_of_items):
     else:
         if datetime.now() - current_timestamp > FETCH_SECONDS:
             print("No MongoDB data. Trip ended or disconnected.")
-             send_message_to_node(channel, "No MongoDB data.")
+            send_message_to_node(channel, "No MongoDB data.")
             return -1
         time.sleep(0.5)
         
