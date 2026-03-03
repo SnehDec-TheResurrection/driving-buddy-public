@@ -243,7 +243,10 @@ while True:
     dashboard_recommendation_value_AI = ""
     send_out_duplicate = ""
     send_out_duplicate_AI = ""
-    
+    test_strings = ["Hello Fola", "Hello Maya", "Hello ESP32", "Hello Sneha", "Hello Vic", "Hello Keya", "Hello Avril", "Hello Lavigne", "Hello Heroku", "Hello Yash."]
+    for i in 10:
+        send_message_to_node(test_strings[i])
+        time.sleep(30)
     #Wait for start of trip and get Trip ID
     message_dyno(channel)
     sensorData = db["sensordatas"]
@@ -294,6 +297,9 @@ while True:
                 "jerk": 0.0
             }
             AI_pred_list.append(entry)
+            AI_pred_list.append(entry)
+            predictions_data = db["predictions"]
+            predictions_data.insert_one(AI_pred_list)
         # classify AI predicted data and send to the dashboard display 
         squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
@@ -349,6 +355,8 @@ while True:
                 "jerk": 0.0
             }
             AI_pred_list.append(entry)
+            predictions_data = db["predictions"]
+            predictions_data.insert_one(AI_pred_list)
         # classify AI predicted data and send to the dashboard display 
         squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk,squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
