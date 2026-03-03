@@ -79,17 +79,16 @@ def cooldown(prediction_text, rec_string, send_out_duplicate):
         
 def increment_persistent_data(prediction_text, verdict_true):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
-    if prediction_text == "Duplicate":
-        return
     prediction_packet = prediction_text.split(",")
-    if prediction_packet[0] == "Start slowing down early." :
-         sudden_braking_instances.append(prediction_packet[1:])
-    elif prediction_packet[0] == "Be careful before turning.":
-        sharp_turning_instances.append(prediction_packet[1:])
-    elif prediction_packet[0] == "Gradually speed up or slow down early.":
-        inconsistent_speed_instances.append(prediction_packet[1:])
-    elif prediction_packet[0] == "Adjust to the left to stay centred in the lane." or prediction_packet[0]=="Adjust to the right to stay centred in the lane.":
-        lane_deviation_instances.append(prediction_packet[1:])
+    if verdict_true:
+        if prediction_packet[0] == "Start slowing down early." :
+             sudden_braking_instances.append(prediction_packet[1:])
+        elif prediction_packet[0] == "Be careful before turning.":
+            sharp_turning_instances.append(prediction_packet[1:])
+        elif prediction_packet[0] == "Gradually speed up or slow down early.":
+            inconsistent_speed_instances.append(prediction_packet[1:])
+        elif prediction_packet[0] == "Adjust to the left to stay centred in the lane." or prediction_packet[0]=="Adjust to the right to stay centred in the lane.":
+            lane_deviation_instances.append(prediction_packet[1:])
 
 def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
@@ -264,7 +263,7 @@ while True:
         dashboard_recommendation_value, verdict_true, send_out_duplicate = cooldown(verdict, dashboard_recommendation_value, send_out_duplicate)
         print(send_out_duplicate)
         increment_persistent_data(verdict, verdict_true)
-        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
+        if send_out_duplicate == "Gradually speed up or slow down early." or send_out_duplicate == "Adjust to the right to stay centred in the lane." or send_out_duplicate == "Adjust to the left to stay centred in the lane.":
             send_message_to_node(channel, send_out_duplicate)
         # Convert this into a tensor, X_test, to feed into the AI model.
         data = convert_into_tensor(queue_of_events)
@@ -300,7 +299,7 @@ while True:
         squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI, verdict_true, send_out_duplicate_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI, send_out_duplicate_AI)
-        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
+        if send_out_duplicate_AI == "Start slowing down early." or send_out_duplicate_AI == "Be careful before turning.":
             #send the recommendation via message queue
             send_message_to_node(channel, send_out_duplicate_AI)
     while trip_ended == False:
@@ -318,7 +317,7 @@ while True:
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
         dashboard_recommendation_value, verdict_true, send_out_duplicate = cooldown(verdict, dashboard_recommendation_value, send_out_duplicate)
         increment_persistent_data(verdict, verdict_true)
-        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
+        if send_out_duplicate == "Gradually speed up or slow down early." or send_out_duplicate == "Adjust to the right to stay centred in the lane." or send_out_duplicate == "Adjust to the left to stay centred in the lane.":
             send_message_to_node(channel, send_out_duplicate)
         # Convert this into a tensor, X_test, to feed into the AI model.
         data = convert_into_tensor(queue_of_events)
@@ -354,7 +353,7 @@ while True:
         squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk,squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI, verdict_true, send_out_duplicate_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI, send_out_duplicate_AI)
-        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
+        if send_out_duplicate_AI == "Start slowing down early." or send_out_duplicate_AI == "Be careful before turning.":
             #send the recommendation via message queue
             send_message_to_node(channel, send_out_duplicate_AI)
         if queue_of_events[-1]["trip_ended"]==True:
