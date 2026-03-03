@@ -79,16 +79,17 @@ def cooldown(prediction_text, rec_string, send_out_duplicate):
         
 def increment_persistent_data(prediction_text, verdict_true):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
-    prediction_packet = prediction_text.split(",")
-    if verdict_true:
-        if prediction_packet[0] == "Start slowing down early." :
-             sudden_braking_instances.append(prediction_packet[1:])
-        elif prediction_packet[0] == "Be careful before turning.":
-            sharp_turning_instances.append(prediction_packet[1:])
-        elif prediction_packet[0] == "Gradually speed up or slow down early.":
-            inconsistent_speed_instances.append(prediction_packet[1:])
-        elif prediction_packet[0] == "Adjust to the left to stay centred in the lane." or prediction_packet[0]=="Adjust to the right to stay centred in the lane.":
-            lane_deviation_instances.append(prediction_packet[1:])
+    if prediction_text:
+        prediction_packet = prediction_text.split(",")
+        if verdict_true:
+            if prediction_packet[0] == "Start slowing down early." :
+                 sudden_braking_instances.append(prediction_packet[1:])
+            elif prediction_packet[0] == "Be careful before turning.":
+                sharp_turning_instances.append(prediction_packet[1:])
+            elif prediction_packet[0] == "Gradually speed up or slow down early.":
+                inconsistent_speed_instances.append(prediction_packet[1:])
+            elif prediction_packet[0] == "Adjust to the left to stay centred in the lane." or prediction_packet[0]=="Adjust to the right to stay centred in the lane.":
+                lane_deviation_instances.append(prediction_packet[1:])
 
 def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
