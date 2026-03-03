@@ -66,7 +66,7 @@ def cooldown(prediction_text, rec_string):
     time_difference = current_time - last_recommendation_time
 
     # Check if it's the same message AND within the cooldown period
-    if prediction_text.split(",")[0] == rec_string and time_difference < COOLDOWN_SECONDS:
+    if prediction_text and prediction_text.split(",")[0] == rec_string and time_difference < COOLDOWN_SECONDS:
         rec_string = "Duplicate"
     else:
         # Update state and trigger recommendation
