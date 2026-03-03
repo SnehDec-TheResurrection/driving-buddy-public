@@ -312,10 +312,8 @@ while True:
         dequeue(queue_of_events)
         enqueue(queue_of_events, next_packets)
         # classify real data
-        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-        squished_lane_deviation_direction, squished_time, squished_lat, squished_long=squish_into_average(queue_of_events)
-        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-                             squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
+        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk,squished_lane_deviation_direction, squished_time, squished_lat, squished_long=squish_into_average(queue_of_events)
+        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
         dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
         increment_persistent_data(dashboard_recommendation_value)
         if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
@@ -351,10 +349,8 @@ while True:
             }
             AI_pred_list.append(entry)
         # classify AI predicted data and send to the dashboard display 
-        squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
-        squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
-        verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
-        squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
+        squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk,squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
+        verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI)
         if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
             #send the recommendation via message queue
