@@ -243,10 +243,10 @@ while True:
     dashboard_recommendation_value_AI = ""
     send_out_duplicate = ""
     send_out_duplicate_AI = ""
-    test_strings = ["Hello Fola", "Hello Maya", "Hello ESP32", "Hello Sneha", "Hello Vic", "Hello Keya", "Hello Avril", "Hello Lavigne", "Hello Heroku", "Hello Yash."]
-    for test_string in test_strings:
-        send_message_to_node(channel, test_string)
-        time.sleep(30)
+    #test_strings = ["Hello Fola", "Hello Maya", "Hello ESP32", "Hello Sneha", "Hello Vic", "Hello Keya", "Hello Avril", "Hello Lavigne", "Hello Heroku", "Hello Yash."]
+    #for test_string in test_strings:
+      #  send_message_to_node(channel, test_string)
+       # time.sleep(30)
     #Wait for start of trip and get Trip ID
     message_dyno(channel)
     sensorData = db["sensordatas"]
@@ -256,17 +256,11 @@ while True:
         queue_of_events = fetch_items(sensorData, window_size)
     if queue_of_events == -1:
         trip_ended = True
+    recommendation_lag = datetime.now()
     if trip_ended == False:
         start_of_trip_timestamp = queue_of_events[0]["timestamp"]
         start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
         print(start_of_trip_location)
-        # classify real data
-        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
-        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
-        dashboard_recommendation_value, verdict_true, send_out_duplicate = cooldown(verdict, dashboard_recommendation_value, send_out_duplicate)
-        increment_persistent_data(verdict, verdict_true)
-        if send_out_duplicate == "Gradually speed up or slow down early." or send_out_duplicate == "Adjust to the right to stay centred in the lane." or send_out_duplicate == "Adjust to the left to stay centred in the lane.":
-            send_message_to_node(channel, send_out_duplicate)
         # Convert this into a tensor, X_test, to feed into the AI model.
         data = convert_into_tensor(queue_of_events)
         
@@ -305,9 +299,18 @@ while True:
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI, verdict_true, send_out_duplicate_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI, send_out_duplicate_AI)
         print(send_out_duplicate_AI)
+        timedelta = datetime.now() - recommendation_lag
+        print("TIme lag: {str(timedelta)}")
         if send_out_duplicate_AI == "Start slowing down early." or send_out_duplicate_AI == "Be careful before turning.":
             #send the recommendation via message queue
             send_message_to_node(channel, send_out_duplicate_AI)
+          # classify real data
+        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
+        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
+        dashboard_recommendation_value, verdict_true, send_out_duplicate = cooldown(verdict, dashboard_recommendation_value, send_out_duplicate)
+        increment_persistent_data(verdict, verdict_true)
+        if send_out_duplicate == "Gradually speed up or slow down early." or send_out_duplicate == "Adjust to the right to stay centred in the lane." or send_out_duplicate == "Adjust to the left to stay centred in the lane.":
+            send_message_to_node(channel, send_out_duplicate)
     while trip_ended == False:
         next_packets = fetch_items(sensorData, stride)
         if next_packets == -1:
@@ -316,15 +319,9 @@ while True:
         if next_packets == -1:
             trip_ended = True
             break
+        recommendation_lag = datetime.now()
         dequeue(queue_of_events)
         enqueue(queue_of_events, next_packets)
-        # classify real data
-        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk,squished_lane_deviation_direction, squished_time, squished_lat, squished_long=squish_into_average(queue_of_events)
-        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
-        dashboard_recommendation_value, verdict_true, send_out_duplicate = cooldown(verdict, dashboard_recommendation_value, send_out_duplicate)
-        increment_persistent_data(verdict, verdict_true)
-        if send_out_duplicate == "Gradually speed up or slow down early." or send_out_duplicate == "Adjust to the right to stay centred in the lane." or send_out_duplicate == "Adjust to the left to stay centred in the lane.":
-            send_message_to_node(channel, send_out_duplicate)
         # Convert this into a tensor, X_test, to feed into the AI model.
         data = convert_into_tensor(queue_of_events)
         data_scaled = loaded_input_scaler.transform(data)
@@ -365,6 +362,15 @@ while True:
         if send_out_duplicate_AI == "Start slowing down early." or send_out_duplicate_AI == "Be careful before turning.":
             #send the recommendation via message queue
             send_message_to_node(channel, send_out_duplicate_AI)
+        timedelta = datetime.now() - recommendation_lag
+        print("TIme lag: {str(timedelta)}")
+        # classify real data
+        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk,squished_lane_deviation_direction, squished_time, squished_lat, squished_long=squish_into_average(queue_of_events)
+        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
+        dashboard_recommendation_value, verdict_true, send_out_duplicate = cooldown(verdict, dashboard_recommendation_value, send_out_duplicate)
+        increment_persistent_data(verdict, verdict_true)
+        if send_out_duplicate == "Gradually speed up or slow down early." or send_out_duplicate == "Adjust to the right to stay centred in the lane." or send_out_duplicate == "Adjust to the left to stay centred in the lane.":
+            send_message_to_node(channel, send_out_duplicate)
         if queue_of_events[-1]["trip_ended"]==True:
             trip_ended=True
             break
