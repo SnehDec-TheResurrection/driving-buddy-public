@@ -121,12 +121,19 @@ app.get("/esp32", async (req, res) => {
   }
   //res.json(doc); // <- use res.json for pretty printing on browser
   //create a plain text string for sending to esp32
-  //const responseString = Object.values(doc).join(",");
-    const responseString = dashboard_recommendation_value;
+  const responseString = Object.values(doc).join(",");
+    //const responseString = dashboard_recommendation_value;
   res.set("Content-Type", "text/plain");
   res.send(responseString);
 })
 
+app.get("/recommendations", async (req, res) => {
+  //res.json(doc); // <- use res.json for pretty printing on browser
+  //create a plain text string for sending to esp32
+  const responseString = dashboard_recommendation_value;
+  res.set("Content-Type", "text/plain");
+  res.send(responseString);
+})
 
 app.post("/esp32", async (req, res) => {
   try {
