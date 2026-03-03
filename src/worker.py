@@ -256,10 +256,8 @@ while True:
         start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
         print(start_of_trip_location)
         # classify real data
-        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-        squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
-        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, 
-                             squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
+        squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
+        verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
         dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
         print(dashboard_recommendation_value)
         increment_persistent_data(dashboard_recommendation_value)
@@ -296,10 +294,8 @@ while True:
             }
             AI_pred_list.append(entry)
         # classify AI predicted data and send to the dashboard display 
-        squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
-        squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
-        verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, 
-        squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
+        squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
+        verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI = cooldown(verdict_AI, dashboard_recommendation_value_AI)
         if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
             #send the recommendation via message queue
