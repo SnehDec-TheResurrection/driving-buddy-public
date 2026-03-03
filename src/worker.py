@@ -32,7 +32,7 @@ stride = 5
 feature_columns = ["speed", "acceleration_x", "acceleration_y", "accel_pedal", "yaw_rate"]
 
 COOLDOWN = 5 # Adjusted for seconds (e.g., 5000ms = 5s)
-FETCH_COOLDOWN = 25 
+FETCH_COOLDOWN = 45
 FETCH_SECONDS = timedelta(seconds=FETCH_COOLDOWN)  
 COOLDOWN_SECONDS = timedelta(seconds=COOLDOWN)  
 
@@ -68,13 +68,15 @@ def cooldown(prediction_text, rec_string):
     # Check if it's the same message AND within the cooldown period
     if prediction_text and prediction_text.split(",")[0] == rec_string and time_difference < COOLDOWN_SECONDS:
         rec_string = "Duplicate"
+        verdict_true = 0
     elif prediction_text:
         # Update state and trigger recommendation
         rec_string = prediction_text.split(",")[0]
         last_recommendation_time = current_time
-    return rec_string
+        verdict_true = 1
+    return rec_string, verdict_true
         
-def increment_persistent_data(prediction_text):
+def increment_persistent_data(prediction_text, verdict_true):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
     if prediction_text == "Duplicate":
         return
@@ -209,10 +211,10 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
     if abs(average_acceleration) > 1.0:
         return f"Start slowing down early.,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     #Sharp Turning
-    if abs(acceleration_y) > 3.7 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 3.7:
+    if abs(acceleration_y) > 1 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 1:
         return f"Be careful before turning.,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}"
     #Inconsistent Acceleration
-    if (jerk > 4 and acceleration_frequency < 0.3) or jerk > 9:
+    if (jerk > 2 and acceleration_frequency < 0.3) or jerk > 3:
         return f"Gradually speed up or slow down early.,{current_average_timestamp},{current_average_gps_latitude},{current_average_gps_longitude}" 
     # Lane deviation
     if(lane_deviation_direction == "left"):
@@ -256,9 +258,9 @@ while True:
         # classify real data
         squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude=squish_into_average(queue_of_events)
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
-        dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
+        dashboard_recommendation_value, verdict_true = cooldown(verdict, dashboard_recommendation_value)
         print(dashboard_recommendation_value)
-        increment_persistent_data(dashboard_recommendation_value)
+        increment_persistent_data(verdict, verdict_true)
         if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
             send_message_to_node(channel, dashboard_recommendation_value)
         # Convert this into a tensor, X_test, to feed into the AI model.
@@ -311,8 +313,8 @@ while True:
         # classify real data
         squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk,squished_lane_deviation_direction, squished_time, squished_lat, squished_long=squish_into_average(queue_of_events)
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
-        dashboard_recommendation_value = cooldown(verdict, dashboard_recommendation_value)
-        increment_persistent_data(dashboard_recommendation_value)
+        dashboard_recommendation_value, verdict_true = cooldown(verdict, dashboard_recommendation_value)
+        increment_persistent_data(dashboard_recommendation_value, verdict_true)
         if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
             send_message_to_node(channel, dashboard_recommendation_value)
         # Convert this into a tensor, X_test, to feed into the AI model.
