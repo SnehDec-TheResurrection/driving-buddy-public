@@ -43,31 +43,40 @@ let amqpChannel = null;
 
 async function connectMQ() {
     try {
-        // 1. Establish the persistent connection
         const connection = await amqp.connect(process.env.CLOUDAMQP_URL);
         
-        // 2. Create the logical channel for communication
+        // CRITICAL: Listen for connection errors to prevent status 1 crashes
+        connection.on("error", (err) => {
+            console.error("[MQ] Connection error:", err);
+            // On Heroku, exit so the dyno restarts fresh
+            process.exit(1); 
+        });
+
+        connection.on("close", () => {
+            console.warn("[MQ] Connection closed. Exiting to restart...");
+            process.exit(1);
+        });
+
         amqpChannel = await connection.createChannel();
 
-        // 3. Define the two 'lanes' (Queues)
-        // One for sending trip start/end signals, one for receiving predictions
         await amqpChannel.assertQueue('trip_signals', { durable: true });
         await amqpChannel.assertQueue('predictions', { durable: true });
 
-        // 4. SET UP THE LISTENER (Lane: Python -> Node)
-        // This runs automatically whenever the Python worker sends text back
+        // Start consuming predictions
         amqpChannel.consume('predictions', (msg) => {
-            prediction_text = msg.content.toString();
-            if (prediction_text !== null) {
-                dashboard_recommendation_value =prediction_text ;
+            if (msg !== null) {
+                const prediction_text = msg.content.toString(); // Use const
+                dashboard_recommendation_value = prediction_text;
                 on_rec(dashboard_recommendation_value);
-                amqpChannel.ack(msg); // Confirms receipt to the broker
+                amqpChannel.ack(msg);
             }
         });
 
         console.log("[MQ] Two-way AMQP ready.");
     } catch (err) {
-        console.error("[MQ] Connection failed:", err);
+        console.error("[MQ] Initial connection failed:", err);
+        // If we can't connect at startup, crash so Heroku retries
+        process.exit(1);
     }
 }
 
