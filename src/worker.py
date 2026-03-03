@@ -293,7 +293,7 @@ while True:
             AI_pred_list.append(entry)
             AI_pred_list.append(entry)
             predictions_data = db["predictions"]
-            predictions_data.insert_one(AI_pred_list)
+            predictions_data.insert_one(entry)
         # classify AI predicted data and send to the dashboard display 
         squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_timestamp, squished_AI_lat, squished_AI_long)
@@ -353,7 +353,7 @@ while True:
             }
             AI_pred_list.append(entry)
             predictions_data = db["predictions"]
-            predictions_data.insert_one(AI_pred_list)
+            predictions_data.insert_one(entry)
         # classify AI predicted data and send to the dashboard display 
         squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk,squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long=squish_into_average(AI_pred_list)
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
