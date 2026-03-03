@@ -76,7 +76,7 @@ def cooldown(prediction_text, rec_string):
         
 def increment_persistent_data(prediction_text):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
-    if prediction_text == "Duplicate:
+    if prediction_text == "Duplicate":
         return
     prediction_packet = prediction_text.split(",")
     if prediction_packet[0] == "Start slowing down early." :
