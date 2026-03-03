@@ -247,6 +247,9 @@ while True:
     sensorData = db["sensordatas"]
     queue_of_events = fetch_items(sensorData, window_size)
     if queue_of_events == -1:
+        time.sleep(10)
+        queue_of_events = fetch_items(sensorData, window_size)
+    if queue_of_events == -1:
         trip_ended = True
     if trip_ended == False:
         start_of_trip_timestamp = queue_of_events[0]["timestamp"]
@@ -304,6 +307,10 @@ while True:
     while trip_ended == False:
         next_packets = fetch_items(sensorData, stride)
         if next_packets == -1:
+            time.sleep(10)
+            next_packets = fetch_items(sensorData, window_size)
+        if next_packets == -1:
+            trip_ended = True
             break
         dequeue(queue_of_events)
         enqueue(queue_of_events, next_packets)
