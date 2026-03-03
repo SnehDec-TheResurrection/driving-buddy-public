@@ -164,7 +164,8 @@ def convert_into_tensor(queue_of_events):
         ])
     return data
     
-def squish_into_average(queue_of_events):
+def squish_into_average(series):
+    global queue_of_events
     # The parameters that we care about for classification
     speed = 0
     average_acceleration = 0 # from accelerometer, simple average. Find the orientation and direction in which the car is moving and use the acceleration
@@ -176,7 +177,7 @@ def squish_into_average(queue_of_events):
     lane_deviation_direction = "centre"
     # take the average of each attribute from feature_columns. By definition, we have a moving average, by using sliding windows.
     #First, sum them up:
-    for doc in queue_of_events:
+    for doc in series:
       speed+=doc["speed"]
       momentary_acceleration = doc["acceleration_x"]
       average_acceleration += momentary_acceleration
