@@ -244,8 +244,8 @@ while True:
     send_out_duplicate = ""
     send_out_duplicate_AI = ""
     test_strings = ["Hello Fola", "Hello Maya", "Hello ESP32", "Hello Sneha", "Hello Vic", "Hello Keya", "Hello Avril", "Hello Lavigne", "Hello Heroku", "Hello Yash."]
-    for i in 10:
-        send_message_to_node(test_strings[i])
+    for test_string in test_strings:
+        send_message_to_node(test_string)
         time.sleep(30)
     #Wait for start of trip and get Trip ID
     message_dyno(channel)
