@@ -68,7 +68,7 @@ def cooldown(prediction_text, rec_string):
     # Check if it's the same message AND within the cooldown period
     if prediction_text and prediction_text.split(",")[0] == rec_string and time_difference < COOLDOWN_SECONDS:
         rec_string = "Duplicate"
-    else if prediction_text:
+    elif prediction_text:
         # Update state and trigger recommendation
         rec_string = prediction_text.split(",")[0]
         last_recommendation_time = current_time
@@ -76,6 +76,8 @@ def cooldown(prediction_text, rec_string):
         
 def increment_persistent_data(prediction_text):
     global sudden_braking_instances, sharp_turning_instances, inconsistent_speed_instances, lane_deviation_instances
+    if prediction_text == "Duplicate:
+        return
     prediction_packet = prediction_text.split(",")
     if prediction_packet[0] == "Start slowing down early." :
          sudden_braking_instances.append(prediction_packet[1:])
@@ -85,8 +87,6 @@ def increment_persistent_data(prediction_text):
         inconsistent_speed_instances.append(prediction_packet[1:])
     elif prediction_packet[0] == "Adjust to the left to stay centred in the lane." or prediction_packet[0]=="Adjust to the right to stay centred in the lane.":
         lane_deviation_instances.append(prediction_packet[1:])
-    else: #if duplicate
-        pass
 
 def connect_to_DB():
     mongo_url = os.getenv("MONGO_URL")
