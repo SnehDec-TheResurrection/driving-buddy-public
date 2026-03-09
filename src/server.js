@@ -40,10 +40,10 @@ const COOLDOWN_MS = 60000;       // 1 minute in milliseconds
 let client = null;
 
 //Global variables to allow sending to the display
-let speed = 1;
-let yaw_rate = 2;
-let acceleration = 3;
-let acceleration_pedal = 4;
+let speed = 0;
+let yaw_rate = 0;
+let acceleration = 0;
+let acceleration_pedal = 0;
 
 
 let amqpChannel = null;
