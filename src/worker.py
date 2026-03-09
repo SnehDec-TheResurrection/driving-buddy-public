@@ -63,7 +63,7 @@ def reconstruct(y_pred_joint_raw, queue_of_events):
 def cooldown(prediction_text, stream_type):
     global alerts_state
     if not prediction_text:
-        return "noalert", 0
+        return "", 0
 
     current_time = datetime.now()
     state = alerts_state[stream_type]
