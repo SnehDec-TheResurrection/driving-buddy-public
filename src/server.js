@@ -194,7 +194,7 @@ app.post("/esp32", async (req, res) => {
         hours,
         minutes,
         seconds);
-      time_with_date.setHours(time_with_date.getHours()-1);
+      time_with_date.setHours(time_with_date.getHours());
 
     speed= parseFloat(fields[2]);
     yaw_rate = parseFloat(fields[7])*180/Math.PI;    
