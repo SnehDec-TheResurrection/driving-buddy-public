@@ -63,7 +63,7 @@ def reconstruct(y_pred_joint_raw, queue_of_events):
 def cooldown(prediction_text, stream_type):
     global alerts_state
     if not prediction_text:
-        return "", 0
+        return "noalert", 0
 
     current_time = datetime.now()
     state = alerts_state[stream_type]
@@ -248,8 +248,8 @@ while True:
     
     
     last_recommendation_time = datetime.now()
-    dashboard_recommendation_value = ""
-    dashboard_recommendation_value_AI = ""
+    dashboard_recommendation_value = "noalert"
+    dashboard_recommendation_value_AI = "noalert"
     #test_strings = ["Be careful before turning.", "Start slowing down early.", "Gradually speed up or slow down early.", "Adjust to the right to stay centred in the lane.", "Adjust to the left to stay centred in the lane."]
     #while True:
         #for test_string in test_strings:
