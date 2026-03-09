@@ -298,7 +298,6 @@ while True:
                 "jerk": 0.0
             }
             AI_pred_list.append(entry)
-            AI_pred_list.append(entry)
             predictions_data = db["predictions"]
             predictions_data.insert_one(entry)
         # classify AI predicted data and send to the dashboard display 
