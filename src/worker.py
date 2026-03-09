@@ -251,9 +251,10 @@ while True:
     dashboard_recommendation_value = ""
     dashboard_recommendation_value_AI = ""
     test_strings = ["Be careful before turning.", "Start slowing down early.", "Gradually speed up or slow down early", "Adjust to the right to stay centred in the lane.", "Adjust to the left to stay centred in the lane."]
-    for test_string in test_strings:
-        send_message_to_node(channel, test_string)
-        time.sleep(30)
+    for i in range(20):
+        for test_string in test_strings:
+            send_message_to_node(channel, test_string)
+            time.sleep(30)
     #Wait for start of trip and get Trip ID
     message_dyno(channel)
     sensorData = db["sensordatas"]
