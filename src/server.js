@@ -180,10 +180,10 @@ app.post("/esp32", async (req, res) => {
      // let lane_offset_direction = "centre";
     let lane_offset_direction = fields[11];
     
-    if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
-      lane_offset = 0; 
-      lane_offset_direction = "centre";
-    }
+    //if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
+      //lane_offset = 0; 
+      //lane_offset_direction = "centre";
+    //}
     
      const [hours, minutes, seconds] = fields[1].split(":").map(Number);
     const now = new Date();
