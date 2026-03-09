@@ -39,6 +39,12 @@ let last_recommendation_time = 0 //helps set a cooldown period for python dashbo
 const COOLDOWN_MS = 60000;       // 1 minute in milliseconds
 let client = null;
 
+//Global variables to allow sending to the display
+let speed = 0;
+let yaw_rate = 0;
+let acceleration = 0;
+
+
 let amqpChannel = null;
 
 async function connectMQ() {
@@ -130,7 +136,7 @@ app.get("/esp32", async (req, res) => {
 app.get("/recommendations", async (req, res) => {
   //res.json(doc); // <- use res.json for pretty printing on browser
   //create a plain text string for sending to esp32
-  const responseString = dashboard_recommendation_value;
+  const responseString = `${speed},${yaw_rate},${acceleration},${dashboard_recommendation_value}`;
   res.set("Content-Type", "text/plain");
   res.send(responseString);
 })
@@ -189,16 +195,18 @@ app.post("/esp32", async (req, res) => {
         seconds);
       time_with_date.setHours(time_with_date.getHours()-1);
 
-    let yaw_rate = parseFloat(fields[7])*180/Math.PI;    
-
+    speed= parseFloat(fields[2]);
+    yaw_rate = parseFloat(fields[7])*180/Math.PI;    
+    acceleration = parseFloat(fields[4]);
+    
 
     doc = {
       userID: fields[0],
       tripID: current_tripID,
       timestamp: time_with_date,
-      speed: parseFloat(fields[2]),
+      speed: speed,
       accel_pedal: parseFloat(fields[3]), 
-      acceleration_x: parseFloat(fields[4]), 
+      acceleration_x: acceleration, 
       acceleration_y: parseFloat(fields[5]), 
       acceleration_z: parseFloat(fields[6]), 
       yaw_rate: yaw_rate,
