@@ -126,12 +126,12 @@ app.get("/esp32", async (req, res) => {
   if (!doc) {
     return res.status(404).send("No data received yet.");
   }
-  //res.json(doc); // <- use res.json for pretty printing on browser
+  res.json(doc); // <- use res.json for pretty printing on browser
   //create a plain text string for sending to esp32
-  const responseString = Object.values(doc).join(",");
+  //const responseString = Object.values(doc).join(",");
     //const responseString = dashboard_recommendation_value;
-  res.set("Content-Type", "text/plain");
-  res.send(responseString);
+  //res.set("Content-Type", "text/plain");
+  //res.send(responseString);
 })
 
 app.get("/recommendations", async (req, res) => {
