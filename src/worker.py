@@ -267,6 +267,8 @@ while True:
     if trip_ended == False:
         start_of_trip_timestamp = queue_of_events[0]["timestamp"]
         start_of_trip_location = [queue_of_events[0]["gps_latitude"], queue_of_events[0]["gps_longitude"]]
+        if start_of_trip_location[0] == 0 or start_of_trip_location[1] == 0: 
+            start_of_trip_location = [queue_of_events[3]["gps_latitude"], queue_of_events[3]["gps_longitude"]]
         print(start_of_trip_location)
         # Convert this into a tensor, X_test, to feed into the AI model.
         data = convert_into_tensor(queue_of_events)
