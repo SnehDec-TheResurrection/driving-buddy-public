@@ -213,7 +213,7 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
     #if abs(acceleration_y) > 0.5 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 0.5:
      #   return f"Be careful before turning.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}"
      #Sudden Braking
-    if abs(average_acceleration) > 0.3:
+    if abs(average_acceleration) > 0.1:
         return f"Start slowing down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
     #Inconsistent Acceleration
     #if (jerk > 1 and acceleration_frequency < 1) or jerk > 2:
