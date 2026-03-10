@@ -192,7 +192,7 @@ def squish_into_average(series):
         potential_peak_jerk = (acceleration_array[-1] - acceleration_array[-2])/0.5 # 0.5 seconds approximately between each reading.
         if potential_peak_jerk > jerk:
           jerk = potential_peak_jerk
-      if (doc["lane_offset"] != 0):
+      if doc["lane_offset"] is not null:
           lane_deviation_direction = doc["lane_offset_direction"]
 
     # Divide the summed values by window_size after completion of for loop
