@@ -67,7 +67,6 @@ def cooldown(prediction_text, stream_type):
 
     current_time = datetime.now()
     state = alerts_state[stream_type]
-    
     new_msg = prediction_text.split(",")[0]
     
     # Check against the specific stream's history
