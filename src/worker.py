@@ -210,8 +210,8 @@ def squish_into_average(series):
 
 def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction,current_average_timestamp, current_average_gps_latitude, current_average_gps_longitude):
     #Sharp Turning
-    if abs(acceleration_y) > 0.5 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 0.5:
-        return f"Be careful before turning.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}"
+    #if abs(acceleration_y) > 0.5 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 0.5:
+     #   return f"Be careful before turning.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}"
      #Sudden Braking
     if abs(average_acceleration) > 0.3:
         return f"Start slowing down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
