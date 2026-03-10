@@ -146,6 +146,7 @@ app.post("/esp32", async (req, res) => {
   try {
     let csv_data = req.body;
     if (csv_data === "start_of_trip") {
+      dashboard_recommendation_value = "noalert";
       end_trip = "";
       trip_ended = false;
       const now = new Date();
