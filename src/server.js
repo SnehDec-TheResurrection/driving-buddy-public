@@ -187,10 +187,10 @@ app.post("/esp32", async (req, res) => {
     const fields = csv_data.split(",");
     //if (fields.length < 7) throw new Error("Invalid CSV");
     
-    let lane_offset = parseFloat(fields[10]);
+    let lane_offset = parseFloat(fields[10].trim());
       //let lane_offset = 0;
      // let lane_offset_direction = "centre";
-    let lane_offset_direction = fields[11];
+    let lane_offset_direction = fields[11].trim();
     
     //if(lane_offset <-1 || lane_offset >1 || lane_offset_direction ==="0"){
       //lane_offset = 0; 
