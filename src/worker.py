@@ -310,7 +310,7 @@ while True:
         print(dashboard_recommendation_value_AI)
         time_gap_AI = datetime.now() - recommendation_lag
         print("TIme lag: {str(time_gap_AI)}")
-        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI== "Be careful before turning.":
+        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI== "Be careful before turning." or dashboard_recommendation_value_AI== "noalert" or dashboard_recommendation_value_AI== "Duplicate":
             #send the recommendation via message queue
             send_message_to_node(channel, dashboard_recommendation_value_AI)
           # classify real data
@@ -318,7 +318,7 @@ while True:
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
         dashboard_recommendation_value, verdict_true = cooldown(verdict, "Real")
         increment_persistent_data(verdict, verdict_true)
-        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
+        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane." or dashboard_recommendation_value== "noalert" or dashboard_recommendation_value== "Duplicate":
             send_message_to_node(channel, dashboard_recommendation_value)
     while trip_ended == False:
         next_packets = fetch_items(sensorData, stride)
@@ -368,7 +368,7 @@ while True:
         verdict_AI = classifier(squished_AI_speed, squished_AI_average_acceleration, squished_AI_acceleration_frequency, squished_AI_yaw_rate, squished_AI_acceleration_y, squished_AI_jerk, squished_AI_lane_deviation_direction, squished_AI_time, squished_AI_lat, squished_AI_long)
         dashboard_recommendation_value_AI, verdict_true = cooldown(verdict_AI, "AI")
         print(dashboard_recommendation_value_AI)
-        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning.":
+        if dashboard_recommendation_value_AI == "Start slowing down early." or dashboard_recommendation_value_AI == "Be careful before turning." or dashboard_recommendation_value_AI== "noalert" or dashboard_recommendation_value_AI== "Duplicate":
             #send the recommendation via message queue
             send_message_to_node(channel, dashboard_recommendation_value_AI)
         time_gap_AI = datetime.now() - recommendation_lag
@@ -378,7 +378,7 @@ while True:
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
         dashboard_recommendation_value, verdict_true = cooldown(verdict, "Real")
         increment_persistent_data(verdict, verdict_true)
-        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane.":
+        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane." or dashboard_recommendation_value== "noalert" or dashboard_recommendation_value== "Duplicate":
             send_message_to_node(channel, dashboard_recommendation_value)
         if queue_of_events[-1]["trip_ended"]==True:
             trip_ended=True
