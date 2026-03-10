@@ -142,6 +142,17 @@ app.get("/recommendations", async (req, res) => {
   res.send(responseString);
 })
 
+//for pretty-printing for the video
+app.get("/labels", async (req, res) => {
+  const data = {
+    speed: speed,
+    acceleration: acceleration,
+    yaw_rate: yaw_rate,
+    alert: dashboard_recommendation_value
+  };
+  res.json(data); 
+});
+
 app.post("/esp32", async (req, res) => {
   try {
     let csv_data = req.body;
