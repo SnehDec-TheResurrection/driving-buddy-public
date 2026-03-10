@@ -317,8 +317,7 @@ while True:
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_timestamp, squished_gps_latitude, squished_gps_longitude)
         dashboard_recommendation_value, verdict_true = cooldown(verdict, "Real")
         increment_persistent_data(verdict, verdict_true)
-        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane." or dashboard_recommendation_value== "noalert" or dashboard_recommendation_value== "Duplicate":
-            send_message_to_node(channel, dashboard_recommendation_value)
+        send_message_to_node(channel, dashboard_recommendation_value)
     while trip_ended == False:
         next_packets = fetch_items(sensorData, stride)
         if next_packets == -1:
@@ -377,8 +376,7 @@ while True:
         verdict = classifier(squished_speed, squished_average_acceleration, squished_acceleration_frequency, squished_yaw_rate, squished_acceleration_y, squished_jerk, squished_lane_deviation_direction, squished_time, squished_lat, squished_long)
         dashboard_recommendation_value, verdict_true = cooldown(verdict, "Real")
         increment_persistent_data(verdict, verdict_true)
-        if dashboard_recommendation_value == "Gradually speed up or slow down early." or dashboard_recommendation_value == "Adjust to the right to stay centred in the lane." or dashboard_recommendation_value == "Adjust to the left to stay centred in the lane." or dashboard_recommendation_value== "noalert" or dashboard_recommendation_value== "Duplicate":
-            send_message_to_node(channel, dashboard_recommendation_value)
+        send_message_to_node(channel, dashboard_recommendation_value)
         if queue_of_events[-1]["trip_ended"]==True:
             trip_ended=True
             break
