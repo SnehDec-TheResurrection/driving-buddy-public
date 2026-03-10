@@ -253,7 +253,6 @@ while True:
     while True:
         for test_string in test_strings:
             send_message_to_node(channel, test_string)
-            time.sleep(10)
     #Wait for start of trip and get Trip ID
     message_dyno(channel)
     sensorData = db["sensordatas"]
