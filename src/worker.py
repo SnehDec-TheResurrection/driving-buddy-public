@@ -216,13 +216,13 @@ def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, ac
     if abs(average_acceleration) > 0.3:
         return f"Start slowing down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
     #Inconsistent Acceleration
-    if (jerk > 1 and acceleration_frequency < 1) or jerk > 2:
-        return f"Gradually speed up or slow down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
+    #if (jerk > 1 and acceleration_frequency < 1) or jerk > 2:
+     #   return f"Gradually speed up or slow down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
     # Lane deviation
-    if(lane_deviation_direction == "left"):
-        return f"Adjust to the right to stay centred in the lane.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
-    elif(lane_deviation_direction == "right"):
-        return f"Adjust to the left to stay centred in the lane.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
+    #if(lane_deviation_direction == "left"):
+     #   return f"Adjust to the right to stay centred in the lane.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
+    #elif(lane_deviation_direction == "right"):
+     #   return f"Adjust to the left to stay centred in the lane.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
     
 
 #Set up the message queue connection
