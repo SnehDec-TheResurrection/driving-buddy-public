@@ -22,7 +22,7 @@ let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
 let end_trip = "";
 let trip_ended = false;
-let dashboard_recommendation_value = ""
+let dashboard_recommendation_value = "noalert"
 
 function on_rec(newRecValue) {
     dashboard_recommendation.emit("new_recommendation", newRecValue);
