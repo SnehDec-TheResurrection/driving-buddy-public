@@ -192,7 +192,7 @@ def squish_into_average(series):
         potential_peak_jerk = (acceleration_array[-1] - acceleration_array[-2])/0.5 # 0.5 seconds approximately between each reading.
         if potential_peak_jerk > jerk:
           jerk = potential_peak_jerk
-      if doc["lane_offset_direction"] != "centre" and abs(doc["lane_offset"] > 1.5 :
+      if doc["lane_offset_direction"] != "centre" and abs(doc["lane_offset"] > 1:
           lane_deviation_direction = doc["lane_offset_direction"]
 
     # Divide the summed values by window_size after completion of for loop
@@ -210,13 +210,13 @@ def squish_into_average(series):
 
 def classifier(speed, average_acceleration, acceleration_frequency, yaw_rate, acceleration_y, jerk, lane_deviation_direction,current_average_timestamp, current_average_gps_latitude, current_average_gps_longitude):
     #Sharp Turning
-    if abs(acceleration_y) > 0.5 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 0.5:
+    if abs(acceleration_y) > 0.2 or abs((yaw_rate*3.14/180)*(speed/3.6)) > 0.2:
         return f"Be careful before turning.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}"
      #Sudden Braking
-    if abs(average_acceleration) > 0.3:
+    if abs(average_acceleration) > 0.1:
         return f"Start slowing down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
     #Inconsistent Acceleration
-    if (jerk > 1 and acceleration_frequency < 0.3) or jerk > 2:
+    if (jerk > 1 and acceleration_frequency < 1) or jerk > 2:
         return f"Gradually speed up or slow down early.,{current_average_gps_latitude},{current_average_gps_longitude},{current_average_timestamp}" 
     # Lane deviation
     if(lane_deviation_direction == "left"):
