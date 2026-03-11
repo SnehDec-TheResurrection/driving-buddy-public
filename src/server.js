@@ -22,7 +22,9 @@ let current_tripID = null; // Global variable to keep track of active tripID
 let doc = null;
 let end_trip = "";
 let trip_ended = false;
-let dashboard_recommendation_value = "noalert"
+let test_strings = ["Be careful before turning.", "Start slowing down early.", "Gradually speed up or slow down early.", "Adjust to the right to stay centred in the lane.", "Adjust to the left to stay centred in the lane."];
+let index_test = 0;
+let dashboard_recommendation_value = dashboard_recommendation_value = test_strings[index_test];
 
 function on_rec(newRecValue) {
     dashboard_recommendation.emit("new_recommendation", newRecValue);
@@ -137,6 +139,11 @@ app.get("/esp32", async (req, res) => {
 app.get("/recommendations", async (req, res) => {
   //res.json(doc); // <- use res.json for pretty printing on browser
   //create a plain text string for sending to esp32
+    index_test+=1;
+    if (index_test === test_strings.length){
+        index_test = 0;
+    }
+     dashboard_recommendation_value = test_strings[index_test];
   const responseString = `${dashboard_recommendation_value}`;
   res.set("Content-Type", "text/plain");
   res.send(responseString);
