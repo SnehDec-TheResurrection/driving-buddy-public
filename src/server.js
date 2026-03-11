@@ -24,7 +24,7 @@ let end_trip = "";
 let trip_ended = false;
 let test_strings = ["Be careful before turning.", "Start slowing down early.", "Gradually speed up or slow down early.", "Adjust to the right to stay centred in the lane.", "Adjust to the left to stay centred in the lane."];
 let index_test = 0;
-let dashboard_recommendation_value = dashboard_recommendation_value = test_strings[index_test];
+let dashboard_recommendation_value = test_strings[index_test];
 
 function on_rec(newRecValue) {
     dashboard_recommendation.emit("new_recommendation", newRecValue);
